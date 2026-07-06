@@ -18,11 +18,12 @@ OBJS= $(SRCS:.c=.o)
 NAME= ft_nmap
 FLAGS= -Wall -Werror -Wextra
 INCLUDES= -Iincludes/
+PCAP_LIB= -lpcap
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	@gcc $(FLAGS) $(OBJS) -o $(NAME)
+	@gcc $(FLAGS) $(OBJS) $(PCAP_LIB) -o $(NAME)
 
 bonus: FLAGS += -DBONUS
 bonus: fclean $(NAME)
@@ -31,9 +32,9 @@ bonus: fclean $(NAME)
 	@gcc -c $< -o $@ $(FLAGS) $(INCLUDES)
 
 clean:
-	@rm $(OBJS)
+	@rm -f $(OBJS)
 
 fclean: clean
-	@rm $(NAME)
+	@rm -f $(NAME)
 
 re: fclean all

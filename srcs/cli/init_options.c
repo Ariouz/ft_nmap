@@ -14,6 +14,7 @@ void    init_opts()
     g_opts->hostname = NULL;
     g_opts->is_running = true;
     g_opts->sockfd_icmp = -1;
+    g_opts->sockfd_udp = -1;
 }
 
 void    init_cli_options()

@@ -12,11 +12,14 @@
 # include <netinet/in.h>
 # include <netinet/ip.h>
 # include <netinet/ip_icmp.h>
+# include <netinet/tcp.h>
 # include <arpa/inet.h>
 # include <netdb.h>
 # include <errno.h>
 # include <getopt.h>
 # include <signal.h>
+# include <stdint.h>
+# include <pcap.h>
 
 # define true 1
 # define false 0

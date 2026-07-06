@@ -21,8 +21,6 @@ int main(int argc, char **argv)
 		fatal_error("Unknown host");
 
 	handle_signals();
-	g_opts->sockfd_udp = open_send_socket();
-	g_opts->sockfd_icmp = open_recv_socket();
 
 	trace();
 	clean_exit(0);
