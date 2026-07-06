@@ -1,5 +1,5 @@
-#ifndef FT_TRACEROUTE_H
-# define FT_TRACEROUTE_H
+#ifndef FT_NMAP_H
+# define FT_NMAP_H
 # define __USE_POSIX2
 
 # include <unistd.h>

@@ -1,4 +1,4 @@
-#include "ft_traceroute.h"
+#include "ft_nmap.h"
 
 static void print_hostname_and_ip(struct in_addr addr)
 {

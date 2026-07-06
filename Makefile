@@ -10,12 +10,12 @@ SRCS= $(addprefix srcs/, \
 	socket/socket_send.c \
 	socket/socket_receive.c \
 	signals/sig_handler.c \
-	traceroute/tracer.c \
-	traceroute/trace_printer.c \
+	nmap/tracer.c \
+	nmap/trace_printer.c \
 	)
 OBJS= $(SRCS:.c=.o)
 
-NAME= ft_traceroute
+NAME= ft_nmap
 FLAGS= -Wall -Werror -Wextra
 INCLUDES= -Iincludes/
 

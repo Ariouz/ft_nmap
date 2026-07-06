@@ -1,4 +1,4 @@
-#include "ft_traceroute.h"
+#include "ft_nmap.h"
 
 static struct icmphdr *recv_ttl_socket(int sockfd_icmp, fd_set *read_set, t_requests requests[3], int request_no)
 {
@@ -76,9 +76,9 @@ void    trace()
     int port = get_option(OPT_PORT)->value;
 
     if (get_option(OPT_NO_DNS)->value == true)
-        printf("ft_traceroute to %s %d hops max, %d byte packets\n", to_str(g_opts->target_ip), max_ttl, payload_size);
+        printf("ft_nmap to %s %d hops max, %d byte packets\n", to_str(g_opts->target_ip), max_ttl, payload_size);
     else
-        printf("ft_traceroute to %s (%s), %d hops max, %d byte packets\n",
+        printf("ft_nmap to %s (%s), %d hops max, %d byte packets\n",
             g_opts->hostname, to_str(g_opts->target_ip), max_ttl, payload_size);
 
 

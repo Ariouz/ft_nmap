@@ -1,4 +1,4 @@
-#include "ft_traceroute.h" 
+#include "ft_nmap.h" 
 
 struct in_addr resolve_ip(const char *hostname)
 {

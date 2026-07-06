@@ -1,4 +1,4 @@
-# include "ft_traceroute.h"
+# include "ft_nmap.h"
 
 
 t_option    *get_option(int code)
@@ -18,7 +18,7 @@ t_option    *get_option(int code)
 
 void print_help()
 {
-    printf("Usage: ft_traceroute [options] <destination>\nOptions:\n");
+    printf("Usage: ft_nmap [options] <destination>\nOptions:\n");
 
     printf("\t --help\t\t\tDisplay this help list\n");
 

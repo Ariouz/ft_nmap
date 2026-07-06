@@ -1,4 +1,4 @@
-#include "ft_traceroute.h"
+#include "ft_nmap.h"
 
 t_opts *g_opts = NULL;
 
