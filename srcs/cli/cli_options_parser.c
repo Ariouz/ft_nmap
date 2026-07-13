@@ -1,6 +1,5 @@
 #include "ft_nmap.h"
 
-# ifdef BONUS
 bool    process_option(t_option *option, char *value)
 {
     if (option->code == OPT_FIRST_TTL
@@ -16,7 +15,6 @@ bool    process_option(t_option *option, char *value)
 
     return true;
 }
-# endif
 
 void     parse_cli_options(int argc, char **argv)
 {
@@ -34,7 +32,6 @@ void     parse_cli_options(int argc, char **argv)
    
 }
 
-# ifdef BONUS
 bool    set_option(int opt, char *optarg)
 {
     t_option *option;
@@ -45,9 +42,7 @@ bool    set_option(int opt, char *optarg)
 
     return process_option(option, optarg);
 }
-# endif
 
-# ifdef BONUS
 int parse_opt_int(char *value, int min, int max)
 {
     char *endptr;
@@ -70,4 +65,3 @@ int parse_opt_int(char *value, int min, int max)
 
     return (int) val;
 }
-# endif

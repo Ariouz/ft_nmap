@@ -4,6 +4,7 @@ SRCS= $(addprefix srcs/, \
 	utils/exit_utils.c \
 	utils/error.c \
 	utils/time_utils.c \
+	utils/str_utils.c \
 	cli/cli_options.c \
 	cli/init_options.c \
 	cli/cli_options_parser.c \
@@ -12,6 +13,7 @@ SRCS= $(addprefix srcs/, \
 	signals/sig_handler.c \
 	nmap/tracer.c \
 	nmap/trace_printer.c \
+	nmap/scantypes.c \
 	)
 OBJS= $(SRCS:.c=.o)
 

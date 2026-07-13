@@ -22,6 +22,8 @@ int main(int argc, char **argv)
 
 	handle_signals();
 
+	parse_types(NULL); // hardcoded NULL
+
 	trace();
 	clean_exit(0);
 	return (0);

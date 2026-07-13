@@ -72,6 +72,7 @@ static void fill_ip_header(struct iphdr *ip, struct in_addr source_ip,
     ip->check = checksum(ip, sizeof(*ip));
 }
 
+
 static void fill_tcp_header(struct tcphdr *tcp, int port)
 {
     memset(tcp, 0, sizeof(*tcp));
@@ -79,7 +80,6 @@ static void fill_tcp_header(struct tcphdr *tcp, int port)
     tcp->dest = htons(port);
     tcp->seq = htonl(1);
     tcp->doff = sizeof(struct tcphdr) / 4;
-    tcp->syn = 1;
     tcp->window = htons(64240);
 }
 
@@ -100,16 +100,54 @@ static void fill_tcp_checksum(struct s_tcp_packet *packet)
     packet->tcp.check = checksum(checksum_buf, sizeof(checksum_buf));
 }
 
-static void send_syn_packet(int sockfd, struct in_addr source_ip, int port)
+static void fill_tcp_flags(struct tcphdr *tcp, t_scan scan)
+{
+    switch (scan)
+    {
+        case SCAN_SYN:
+            tcp->syn = 1;
+            break;
+
+        case SCAN_ACK:
+            tcp->ack = 1;
+            break;
+
+        case SCAN_FIN:
+            tcp->fin = 1;
+            break;
+
+        case SCAN_NULL:
+            break;
+
+        case SCAN_XMAS:
+            tcp->fin = 1;
+            tcp->psh = 1;
+            tcp->urg = 1;
+            break;
+
+        default:
+            break;
+    }
+}
+
+static void send_tcp_packet(
+    int sockfd,
+    struct in_addr source_ip,
+    int port,
+    t_scan scan)
 {
     struct s_tcp_packet packet;
     struct sockaddr_in  target;
 
     memset(&packet, 0, sizeof(packet));
+
     fill_ip_header(&packet.ip, source_ip, g_opts->target_ip);
     fill_tcp_header(&packet.tcp, port);
+    fill_tcp_flags(&packet.tcp, scan);
     fill_tcp_checksum(&packet);
+
     target = get_sockaddr(g_opts->target_ip, port);
+
     if (sendto(sockfd, &packet, sizeof(packet), 0,
             (struct sockaddr *)&target, sizeof(target)) == -1)
         fatal_error(strerror(errno));
@@ -167,13 +205,16 @@ static const unsigned char *get_ip_packet(const unsigned char *packet,
     return NULL;
 }
 
-static const char *read_syn_response(pcap_t *pcap, int port)
+static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan)
 {
     struct pcap_pkthdr      *header;
     const unsigned char     *packet;
     const unsigned char     *ip_packet;
     struct iphdr            *ip;
     struct tcphdr           *tcp;
+    struct icmphdr          *icmp;
+    struct iphdr            *inner_ip;
+    struct tcphdr           *inner_tcp;
     int                     datalink;
     int                     result;
     struct timeval          start;
@@ -183,11 +224,13 @@ static const char *read_syn_response(pcap_t *pcap, int port)
     datalink = pcap_datalink(pcap);
     gettimeofday(&start, NULL);
     timeout_ms = get_option(OPT_SOCK_TIMEOUT)->value * 1000LL;
+
     while (g_opts->is_running)
     {
         gettimeofday(&now, NULL);
         if (get_time_ms(now) - get_time_ms(start) >= timeout_ms)
-            return SCAN_FILTERED;
+            break ;
+
         result = pcap_next_ex(pcap, &header, &packet);
         if (result == 0)
         {
@@ -197,30 +240,127 @@ static const char *read_syn_response(pcap_t *pcap, int port)
         if (result == -1)
             fatal_error(pcap_geterr(pcap));
         if (result == -2)
-            return SCAN_FILTERED;
+            break ;
+
         ip_packet = get_ip_packet(packet, datalink);
-        if (!ip_packet || header->caplen < (size_t)(ip_packet - packet)
-                + sizeof(struct iphdr))
+        if (!ip_packet)
             continue;
+        if (header->caplen < (size_t)(ip_packet - packet) + sizeof(struct iphdr))
+            continue;
+
         ip = (struct iphdr *)ip_packet;
+
+        // HANDLE ICMP RESPONSES
+
+        if (ip->protocol == IPPROTO_ICMP)
+        {
+            icmp = (struct icmphdr *)(ip_packet + ip->ihl * 4);
+
+            if (icmp->type != ICMP_DEST_UNREACH)
+                continue;
+
+            if (icmp->code != ICMP_HOST_UNREACH &&
+                icmp->code != ICMP_PROT_UNREACH &&
+                icmp->code != ICMP_PORT_UNREACH &&
+                icmp->code != ICMP_NET_ANO &&
+                icmp->code != ICMP_HOST_ANO &&
+                icmp->code != ICMP_PKT_FILTERED)
+                continue;
+
+            inner_ip = (struct iphdr *)(icmp + 1);
+
+            if (inner_ip->protocol != IPPROTO_TCP)
+                continue;
+
+            inner_tcp = (struct tcphdr *)((unsigned char *)inner_ip
+                + inner_ip->ihl * 4);
+
+            if (ntohs(inner_tcp->source) != SYN_SOURCE_PORT ||
+                ntohs(inner_tcp->dest) != port)
+                continue;
+
+            // TODO type 3 should only be handled in udp as closed
+            return SCAN_FILTERED;
+        }
+
+        // HANDLE TCP RESPONSE
+
         if (ip->protocol != IPPROTO_TCP)
             continue;
-        tcp = (struct tcphdr *)(ip_packet + (ip->ihl * 4));
-        if (ntohs(tcp->source) != port || ntohs(tcp->dest) != SYN_SOURCE_PORT)
+
+        tcp = (struct tcphdr *)(ip_packet + ip->ihl * 4);
+
+        if (ntohs(tcp->source) != port ||
+            ntohs(tcp->dest) != SYN_SOURCE_PORT)
             continue;
-        if (tcp->syn && tcp->ack)
-            return SCAN_OPEN;
-        if (tcp->rst)
-            return SCAN_CLOSED;
+
+        switch (scan)
+        {
+            case SCAN_SYN:
+                if (tcp->syn && tcp->ack)
+                    return SCAN_OPEN;
+                if (tcp->rst)
+                    return SCAN_CLOSED;
+                break;
+
+            case SCAN_ACK:
+                if (tcp->rst)
+                    return SCAN_UNFILTERED;
+                break;
+
+            case SCAN_FIN:
+            case SCAN_NULL:
+            case SCAN_XMAS:
+                if (tcp->rst)
+                    return SCAN_CLOSED;
+                break;
+
+            default:
+                break;
+        }
     }
-    return SCAN_FILTERED;
+
+    switch (scan)
+    {
+        case SCAN_SYN:
+            return SCAN_FILTERED;
+
+        case SCAN_ACK:
+            return SCAN_FILTERED;
+
+        case SCAN_FIN:
+        case SCAN_NULL:
+        case SCAN_XMAS:
+            return SCAN_OPEN_FILTERED;
+
+        default:
+            return SCAN_FILTERED;
+    }
 }
 
-static const char *scan_syn_port(int sockfd, pcap_t *pcap,
-    struct in_addr source_ip, int port)
+const char *scan_tcp_port(
+    int sockfd,
+    pcap_t *pcap,
+    struct in_addr source_ip,
+    uint16_t port,
+    t_scan scan)
 {
-    send_syn_packet(sockfd, source_ip, port);
-    return read_syn_response(pcap, port);
+    send_tcp_packet(sockfd, source_ip, port, scan);
+    return read_tcp_response(pcap, port, scan);
+}
+
+const char *scan_to_string(t_scan scan)
+{
+    static const char *names[] = {
+        "SYN",
+        "NULL",
+        "ACK",
+        "FIN",
+        "XMAS",
+        "UDP"
+    };
+
+    return names[scan];
 }
 
 void    trace()
@@ -238,10 +378,33 @@ void    trace()
         printf("ft_nmap scan %s\n", to_str(g_opts->target_ip));
     else
         printf("ft_nmap scan %s (%s)\n", g_opts->hostname, to_str(g_opts->target_ip));
-    printf("Scan: SYN\n");
-    for (int i = 0; i < port_count && g_opts->is_running; i++)
-        printf("%d/tcp SYN(%s)\n", ports[i],
-            scan_syn_port(sockfd, pcap, source_ip, ports[i]));
+    
+    // scans
+    for (int scan = 0; scan < SCAN_COUNT && g_opts->is_running; scan++)
+    {
+        if (!g_opts->scans[scan])
+            continue;
+
+        printf("Scan: %s\n", scan_to_string(scan));
+
+        for (int i = 0; i < port_count && g_opts->is_running; i++)
+        {
+            const char *state;
+
+            // TODO UDP SCAN
+            // if (scan == SCAN_UDP)
+            //     state = scan_udp_port
+            // else
+            state = scan_tcp_port(sockfd, pcap, source_ip, ports[i], scan);
+
+            printf("%d/%s %s(%s)\n",
+                ports[i],
+                scan == SCAN_UDP ? "udp" : "tcp",
+                scan_to_string(scan),
+                state);
+        }
+    }
+
     pcap_close(pcap);
     close(sockfd);
 }
