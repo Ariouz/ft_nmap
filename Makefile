@@ -14,6 +14,8 @@ SRCS= $(addprefix srcs/, \
 	nmap/tracer.c \
 	nmap/trace_printer.c \
 	nmap/scantypes.c \
+	nmap/tcp_scan.c \
+	nmap/udp_scan.c \
 	)
 OBJS= $(SRCS:.c=.o)
 

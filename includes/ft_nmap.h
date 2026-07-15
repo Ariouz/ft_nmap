@@ -13,6 +13,7 @@
 # include <netinet/ip.h>
 # include <netinet/ip_icmp.h>
 # include <netinet/tcp.h>
+# include <netinet/udp.h>
 # include <arpa/inet.h>
 # include <netdb.h>
 # include <errno.h>
@@ -39,6 +40,10 @@
 # define SCAN_OPEN_FILTERED   "open|filtered"
 
 # define MAX_OPTS 16
+
+#define SCAN_OPEN "open"
+#define SCAN_CLOSED "closed"
+#define SCAN_FILTERED "filtered"
 
 typedef int bool;
 
@@ -122,6 +127,11 @@ int		        multisleep(long max_time_millis, long increment);
 
 int             split (char *str, char c, char ***arr);
 
+void                fill_ip_header(struct iphdr *ip, struct in_addr source_ip, struct in_addr target_ip, uint16_t total_len, uint8_t protocol);
+const unsigned char *get_ip_packet(const unsigned char *packet, int datalink);
+unsigned short      checksum(void *data, size_t len);
 void            trace();
+const char      *scan_tcp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, t_scan scan, uint16_t source_port);
+const char      *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port);
 
 #endif
