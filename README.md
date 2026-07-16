@@ -9,6 +9,8 @@
 
 ## Bonuses
 - [X] Bonus: --ttl
-- [] Bonus: --badsum
 - [X] Bonus: -g/--source-port
-- [] Bonus: --open (show only open results)
+- [X] Bonus: --open (show only open results)
+- [] Bonus: --badsum
+- [] Bonus: -f/--mtu
+- [X] Bonus: --reason

@@ -30,6 +30,7 @@
 # define OPT_SOURCE_PORT 'g'
 # define OPT_TTL 't'
 # define OPT_OPEN 'o'
+# define OPT_REASON 'r'
 
 # define SCAN_OPEN            "open"
 # define SCAN_CLOSED          "closed"

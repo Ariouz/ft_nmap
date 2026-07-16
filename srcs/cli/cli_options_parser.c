@@ -11,6 +11,7 @@ struct option long_options[] = {
     {"source-port",    required_argument, 0, 'g'},
     {"ttl",    required_argument, 0, 't'},
     {"open",    no_argument, 0, 'o'},
+    {"reason",    no_argument, 0, 'r'},
     #endif
     {0, 0, 0, 0}
 };
@@ -34,7 +35,7 @@ void parse_cli_options(int argc, char **argv) {
     #ifndef BONUS
     char *options = "h:p:i:f:s:c:";
     #else
-    char *options = "h:p:i:f:s:c:g:t:o";
+    char *options = "h:p:i:f:s:c:g:t:or";
     #endif
 
     while ((opt = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
@@ -102,7 +103,8 @@ void print_help() {
     printf("\nBonus Options:\n");
     printf("  -g, --source-port <port>\tUse specific source port\n");
     printf("  -t, --ttl <ttl>\t\tSet time-to-live\n");
-    printf("  -o, --open\t\t\tShow only open ports\n");
+    printf("  -o, --open\t\t\tOnly show open ports\n");
+    printf("  -r, --reason\t\t\tDisplay the reason a port is in a particular state\n");
     #endif
 
     printf("\n");

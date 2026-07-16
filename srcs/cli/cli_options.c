@@ -5,6 +5,7 @@ int def_value(int code) {
         case OPT_SOURCE_PORT: return 42424; break;
         case OPT_TTL: return DEFAULT_TTL; break;
         case OPT_OPEN: return false; break;
+        case OPT_REASON: return false; break;
         default: return 0; break;
     }
     return 0;

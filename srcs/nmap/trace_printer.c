@@ -32,23 +32,48 @@ static bool is_any_scan_open(t_port_result res) {
 }
 
 const char *get_conclusion(t_port_result res) {
-    if (res.states[SCAN_SYN] && strcmp(res.states[SCAN_SYN], "open") == 0)
-        return "Open";
+    if (res.states[SCAN_SYN]) {
+        if (strcmp(res.states[SCAN_SYN], "open") == 0) return "Open";
+        if (strcmp(res.states[SCAN_SYN], "filtered") == 0) return "Filtered";
+    }
 
-    if (res.states[SCAN_SYN] && strcmp(res.states[SCAN_SYN], "filtered") == 0)
-        return "Filtered";
-
-    if (!is_open(res.states[SCAN_NULL]) || !is_open(res.states[SCAN_FIN]))
+    if ((res.states[SCAN_NULL] && strcmp(res.states[SCAN_NULL], "closed") == 0) ||
+        (res.states[SCAN_FIN] && strcmp(res.states[SCAN_FIN], "closed") == 0) ||
+        (res.states[SCAN_XMAS] && strcmp(res.states[SCAN_XMAS], "closed") == 0)) {
         return "Closed";
+    }
+
+    if (res.states[SCAN_ACK] && strcmp(res.states[SCAN_ACK], "unfiltered") == 0) {
+        return "Unfiltered";
+    }
 
     return "Open|Filtered";
 }
 
+const char *get_reason(t_port_result res) {
+    if (res.states[SCAN_SYN]) {
+        if (strcmp(res.states[SCAN_SYN], "open") == 0) return "syn-ack";
+        if (strcmp(res.states[SCAN_SYN], "filtered") == 0) return "no-response";
+    }
 
-static void print_table_header(void)
-{
-    printf("%-8s %-20s %-50s %-10s\n", "Port", "Service", "Results", "Conclusion");
-    printf("---------------------------------------------------------------------------------------------------\n");
+    if ((res.states[SCAN_NULL] && strcmp(res.states[SCAN_NULL], "closed") == 0) ||
+        (res.states[SCAN_FIN] && strcmp(res.states[SCAN_FIN], "closed") == 0)) {
+        return "rst";
+    }
+
+    if (res.states[SCAN_ACK] && strcmp(res.states[SCAN_ACK], "unfiltered") == 0) {
+        return "rst";
+    }
+
+    return "no-response";
+}
+
+static void print_table_header(void) {
+    printf("%-8s %-20s %-30s %-15s", "Port", "Service", "Results", "Conclusion");
+    #ifdef BONUS
+    if (get_option(OPT_REASON)) printf(" %-10s", "Reason");
+    #endif
+    printf("\n------------------------------------------------------------------------------------------\n");
 }
 
 static void print_port_row(t_port_result res)
@@ -57,15 +82,22 @@ static void print_port_row(t_port_result res)
     char *serv_name = serv ? serv->s_name : "Unassigned";
 
     printf("%-8d %-20s ", res.port, serv_name);
-    
-    for (int scan = 0; scan < SCAN_COUNT; scan++) {
-        if (res.states[scan]) printf("%s(%s) ", scan_to_string(scan), res.states[scan]);
-        
-        if ((scan + 1) % 3 == 0 && (scan + 1) < SCAN_COUNT) 
-            printf("\n%-28s", "");
-    }
 
-    printf(" %-10s\n", get_conclusion(res));
+    int col_count = 0;
+    for (int scan = 0; scan < SCAN_COUNT; scan++) {
+        if (res.states[scan]) {
+            printf("%s(%s) ", scan_to_string(scan), res.states[scan]);
+            col_count++;
+            if (col_count % 2 == 0 && col_count < SCAN_COUNT) {
+                printf("\n%-30s", "");
+            }
+        }
+    }
+    printf("%-15s ", get_conclusion(res));
+    #ifdef BONUS
+        if (get_option(OPT_REASON)) printf("%-10s", get_reason(res));
+    #endif
+    printf("\n");
 }
 
 void print_final_results(t_port_result *results, size_t port_count, struct in_addr target_ip)

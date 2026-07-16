@@ -22,12 +22,13 @@ void    init_opts()
 }
 
 void init_default_options() {
-    g_opts->def_size = 3;
+    g_opts->def_size = 4;
     g_opts->def_options = malloc(sizeof(t_option *) * g_opts->def_size);
     
     g_opts->def_options[0] = get_default_if_not_opt(OPT_SOURCE_PORT);
     g_opts->def_options[1] = get_default_if_not_opt(OPT_TTL);
     g_opts->def_options[2] = get_default_if_not_opt(OPT_OPEN);
+    g_opts->def_options[3] = get_default_if_not_opt(OPT_REASON);
 }
 
 void    init_cli_options()
@@ -41,6 +42,7 @@ void    init_cli_options()
     add_option(OPT_SOURCE_PORT, "Source port (default 42424)", 42424, true);
     add_option(OPT_TTL, "Packet TTL", DEFAULT_TTL, true);
     add_option(OPT_OPEN, "Display only open ports", false, false);
+    add_option(OPT_REASON, "Display the reason a port is in state", false, false);
     #endif
 
 }
