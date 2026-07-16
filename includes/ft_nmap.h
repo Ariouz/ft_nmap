@@ -47,18 +47,6 @@
 
 typedef int bool;
 
-typedef struct s_requests {
-    float rtt;
-    struct sockaddr_in responder;
-}  t_requests;
-
-typedef struct s_option {
-    char    code;
-    char    *description;
-    int     value;
-    bool    requires_value;
-}   t_option;
-
 typedef enum e_scan
 {
     SCAN_SYN,
@@ -69,6 +57,18 @@ typedef enum e_scan
     SCAN_UDP,
     SCAN_COUNT
 } t_scan;
+
+typedef struct s_port_result {
+    int         port;
+    const char  *states[SCAN_COUNT];
+}   t_port_result;
+
+typedef struct s_option {
+    char    code;
+    char    *description;
+    int     value;
+    bool    requires_value;
+}   t_option;
 
 typedef struct s_opts {
     t_option        **options;
@@ -112,7 +112,6 @@ void            parse_port_option(char *arg);
 struct sockaddr_in  get_sockaddr(struct in_addr target_ip, int port);
 void                send_socket(struct in_addr target_ip, int sockfd, size_t payload_size, int port);
 size_t              wait_socket(int sockfd, fd_set *read_set);
-void                process_results(int ttl, struct s_requests requests[3]);
 
 void            print_help();
 
@@ -137,5 +136,7 @@ unsigned short      checksum(void *data, size_t len);
 void            trace();
 const char      *scan_tcp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, t_scan scan, uint16_t source_port);
 const char      *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port);
+
+void            print_final_results(t_port_result *results, size_t port_count);
 
 #endif

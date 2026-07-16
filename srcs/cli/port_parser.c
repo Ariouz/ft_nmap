@@ -10,7 +10,6 @@ void add_port(int port) {
     g_opts->ports = realloc(g_opts->ports, sizeof(int) * (g_opts->port_count + 1));
     g_opts->ports[g_opts->port_count] = port;
     g_opts->port_count++;
-    printf("add port %d\n", port);
 }
 
 void parse_port_option(char *arg)

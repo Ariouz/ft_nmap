@@ -107,19 +107,7 @@ const unsigned char *get_ip_packet(const unsigned char *packet, int datalink)
     return NULL;
 }
 
-const char *scan_to_string(t_scan scan)
-{
-    static const char *names[] = {
-        "SYN",
-        "NULL",
-        "ACK",
-        "FIN",
-        "XMAS",
-        "UDP"
-    };
 
-    return names[scan];
-}
 
 void    trace()
 {
@@ -127,7 +115,9 @@ void    trace()
     int             sockfd;
     pcap_t          *pcap;
     struct in_addr  source_ip;
-    struct timeval start, end;
+    struct timeval  start, end;
+
+    t_port_result   *results = malloc(sizeof(t_port_result) * g_opts->port_count);
 
     source_ip = get_source_ip(g_opts->target_ip);
     sockfd = open_raw_socket();
@@ -135,9 +125,10 @@ void    trace()
         printf("ft_nmap scan %s\n", to_str(g_opts->target_ip));
     else
         printf("ft_nmap scan %s (%s)\n", g_opts->hostname, to_str(g_opts->target_ip));
+
     
 
-    uint16_t source_port = 42424;  //40000 + rand() % 20000;
+    uint16_t source_port = 42424; // todo --g/--source-port
     pcap = open_pcap();
     gettimeofday(&start, NULL);
 
@@ -162,12 +153,8 @@ void    trace()
             else
                 state = scan_tcp_port(sockfd, pcap, source_ip, ports[i], scan, source_port);
 
-            printf("%d/%s %s(%s)\n",
-                ports[i],
-                scan == SCAN_UDP ? "udp" : "tcp",
-                scan_to_string(scan),
-                state);
-
+            results[i].port = ports[i];
+            results[i].states[scan] = state;
         }
     }
     gettimeofday(&end, NULL);
@@ -177,4 +164,6 @@ void    trace()
 
     pcap_close(pcap);
     close(sockfd);
+
+    print_final_results(results, g_opts->port_count);
 }
