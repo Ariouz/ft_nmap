@@ -9,22 +9,22 @@ int main(int argc, char **argv)
 	handle_signals();
 
 	int args_count = argc - optind;
-
-	if (args_count < 1)
-		fatal_error("Destination IP/hostname required");
-	if (args_count > 1)
-		fatal_error("Destination already set or unknown flag");
-
-	g_opts->hostname = argv[optind];
-	g_opts->target_ip = resolve_ip(argv[optind]);
-
-	if (g_opts->target_ip.s_addr == INADDR_NONE)
-		fatal_error("Unknown host");
-
+	(void) args_count;
 
 	parse_types(NULL); // hardcoded NULL
 
 	if (g_opts->port_count == 0) parse_port_option("1-1024");
-	trace();
+	
+	printf("t");
+	if (g_opts->target_count == 0)
+		print_help();
+
+	size_t	index = 0;
+	while (index < g_opts->target_count) {
+		printf("\n\n");
+		trace(g_opts->targets[index]);
+		index++;
+	}
+	clean_exit(0);
 	return (0);
 }

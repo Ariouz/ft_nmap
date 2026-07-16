@@ -73,11 +73,11 @@ typedef struct s_opts {
     t_option        **def_options;
     size_t          size;
     size_t          def_size;
-    char            *hostname;
     volatile sig_atomic_t            is_running;
     int             sockfd_icmp;
     int             sockfd_udp;
-    struct in_addr  target_ip;
+    struct in_addr  *targets;
+    size_t          target_count;
     int             scans[SCAN_COUNT];
 
     int             *ports;
@@ -88,11 +88,9 @@ extern t_opts *g_opts;
 
 struct in_addr  resolve_ip(const char *target);
 char            *to_str(const struct in_addr addr);
+char*           get_hostname(const char *ip_str);
 
 void            handle_signals();
-
-int             open_send_socket();
-int             open_recv_socket();
 
 void            init_cli_options();
 t_option        *create_option(int code, char *description, int default_value, bool requires_value);
@@ -109,10 +107,10 @@ t_option        *get_default_if_not_opt(int code);
 
 void	        parse_types(char *input);
 void            parse_port_option(char *arg);
+void            add_target(const char *ip);
+void            parse_file(const char *filename);
 
 struct sockaddr_in  get_sockaddr(struct in_addr target_ip, int port);
-void                send_socket(struct in_addr target_ip, int sockfd, size_t payload_size, int port);
-size_t              wait_socket(int sockfd, fd_set *read_set);
 
 void            print_help();
 
@@ -134,10 +132,10 @@ int             split (char *str, char c, char ***arr);
 void                fill_ip_header(struct iphdr *ip, struct in_addr source_ip, struct in_addr target_ip, uint16_t total_len, uint8_t protocol);
 const unsigned char *get_ip_packet(const unsigned char *packet, int datalink);
 unsigned short      checksum(void *data, size_t len);
-void            trace();
-const char      *scan_tcp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, t_scan scan, uint16_t source_port);
-const char      *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port);
+void                trace(struct in_addr target_ip);
+const char      *scan_tcp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, t_scan scan, uint16_t source_port, struct in_addr target_ip);
+const char      *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port, struct in_addr target_ip);
 
-void            print_final_results(t_port_result *results, size_t port_count);
+void            print_final_results(t_port_result *results, size_t port_count, struct in_addr target_ip);
 
 #endif

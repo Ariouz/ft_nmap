@@ -68,7 +68,7 @@ static int open_raw_socket(void)
     return sockfd;
 }
 
-static pcap_t *open_pcap()
+static pcap_t *open_pcap(struct in_addr target_ip)
 {
     pcap_t              *handle;
     char                errbuf[PCAP_ERRBUF_SIZE];
@@ -84,8 +84,8 @@ static pcap_t *open_pcap()
     snprintf(filter, sizeof(filter),
         "(tcp and src host %s) or "
         "(icmp and src host %s)",
-        to_str(g_opts->target_ip),
-        to_str(g_opts->target_ip));
+        to_str(target_ip),
+        to_str(target_ip));
     if (pcap_compile(handle, &program, filter, 1, 0) == -1)
         fatal_error(pcap_geterr(handle));
     if (pcap_setfilter(handle, &program) == -1)
@@ -109,20 +109,21 @@ const unsigned char *get_ip_packet(const unsigned char *packet, int datalink)
 
 
 
-void    trace()
+void    trace(struct in_addr target_ip)
 {
     int             *ports = g_opts->ports;
     int             sockfd;
     pcap_t          *pcap;
     struct in_addr  source_ip;
     struct timeval  start, end;
+    char            *hostname;
 
     t_port_result   *results = calloc(g_opts->port_count, sizeof(t_port_result));
 
-    source_ip = get_source_ip(g_opts->target_ip);
+    source_ip = get_source_ip(target_ip);
     sockfd = open_raw_socket();
-    printf("ft_nmap scan %s (%s)\n", g_opts->hostname, to_str(g_opts->target_ip));
-
+    hostname = get_hostname(to_str(target_ip));
+    printf("ft_nmap scan %s (%s)\n", hostname, to_str(target_ip));
 
     #ifdef BONUS
     uint16_t source_port = get_option(OPT_SOURCE_PORT)->value;
@@ -133,7 +134,7 @@ void    trace()
     printf("Source port: %d\n", source_port);
     printf("Packet TLL: %d\n", get_option(OPT_TTL)->value);
 
-    pcap = open_pcap();
+    pcap = open_pcap(target_ip);
     gettimeofday(&start, NULL);
 
     // scans
@@ -153,9 +154,9 @@ void    trace()
             const char *state;
 
             if (scan == SCAN_UDP)
-                state = scan_udp_port(sockfd, pcap, source_ip, ports[i], source_port);
+                state = scan_udp_port(sockfd, pcap, source_ip, ports[i], source_port, target_ip);
             else
-                state = scan_tcp_port(sockfd, pcap, source_ip, ports[i], scan, source_port);
+                state = scan_tcp_port(sockfd, pcap, source_ip, ports[i], scan, source_port, target_ip);
 
             results[i].port = ports[i];
             results[i].states[scan] = state;
@@ -170,7 +171,7 @@ void    trace()
     if (pcap) pcap_close(pcap);
     if (sockfd >= 0) close(sockfd);
 
-    print_final_results(results, g_opts->port_count);
+    print_final_results(results, g_opts->port_count, target_ip);
     free(results);
-	clean_exit(0);
+    free(hostname);
 }

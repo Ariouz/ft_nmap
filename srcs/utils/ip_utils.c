@@ -26,3 +26,22 @@ char    *to_str(const struct in_addr addr)
 {
     return inet_ntoa(addr);
 }
+
+char *get_hostname(const char *ip_str) {
+    struct sockaddr_in sa;
+    char host[NI_MAXHOST];
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sin_family = AF_INET;
+    if (inet_pton(AF_INET, ip_str, &sa.sin_addr) <= 0)
+        return strdup(ip_str);
+
+    int res = getnameinfo((struct sockaddr *)&sa, sizeof(sa), 
+                          host, sizeof(host), 
+                          NULL, 0, NI_NAMEREQD);
+
+    if (res == 0)
+        return strdup(host);
+    
+    return strdup(ip_str);
+}

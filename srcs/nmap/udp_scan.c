@@ -41,26 +41,26 @@ static void fill_udp_checksum(t_udp_packet *packet)
     packet->udp.check = checksum(buf, sizeof(buf));
 }
 
-static void send_udp_packet( int sockfd, struct in_addr source_ip, int port, uint16_t source_port)
+static void send_udp_packet( int sockfd, struct in_addr source_ip, int port, uint16_t source_port, struct in_addr target_ip)
 {
     t_udp_packet packet;
     struct sockaddr_in target;
 
     memset(&packet, 0, sizeof(packet));
 
-    fill_ip_header(&packet.ip, source_ip, g_opts->target_ip, sizeof(t_udp_packet), IPPROTO_UDP);
+    fill_ip_header(&packet.ip, source_ip, target_ip, sizeof(t_udp_packet), IPPROTO_UDP);
 
     fill_udp_header(&packet.udp, port, source_port);
     fill_udp_checksum(&packet);
 
-    target = get_sockaddr(g_opts->target_ip, port);
+    target = get_sockaddr(target_ip, port);
 
     if (sendto(sockfd, &packet, sizeof(packet), 0,
         (struct sockaddr *)&target, sizeof(target)) == -1)
         fatal_error(strerror(errno));
 }
 
-static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_port)
+static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_port, struct in_addr target_ip)
 {
     struct pcap_pkthdr      *header;
     const unsigned char     *packet;
@@ -103,7 +103,7 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
             continue;
 
         ip = (struct iphdr *)ip_packet;
-        if (ip->saddr != g_opts->target_ip.s_addr)
+        if (ip->saddr != target_ip.s_addr)
             continue;
 
         /* UDP */
@@ -161,8 +161,8 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
     return SCAN_OPEN_FILTERED;
 }
 
-const char *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port)
+const char *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port, struct in_addr target_ip)
 {
-    send_udp_packet(sockfd, source_ip, port, source_port);
-    return read_udp_response(pcap, port, source_port);
+    send_udp_packet(sockfd, source_ip, port, source_port, target_ip);
+    return read_udp_response(pcap, port, source_port, target_ip);
 }

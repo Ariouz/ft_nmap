@@ -13,6 +13,7 @@ void    clean_free()
     if (!g_opts) return;
 
     if (g_opts->ports) free(g_opts->ports);
+    if (g_opts->targets) free(g_opts->targets);
     free_options(g_opts->options, g_opts->size);
     if (g_opts->def_options) free_options(g_opts->def_options, g_opts->def_size);
     free(g_opts);

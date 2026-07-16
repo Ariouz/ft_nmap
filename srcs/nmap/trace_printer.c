@@ -56,9 +56,9 @@ static void print_port_row(t_port_result res)
     printf(" %-10s\n", get_conclusion(res));
 }
 
-void print_final_results(t_port_result *results, size_t port_count)
+void print_final_results(t_port_result *results, size_t port_count, struct in_addr target_ip)
 {
-    printf("\nIP address: %s\n", to_str(g_opts->target_ip));
+    printf("\nIP address: %s\n", to_str(target_ip));
     (void) port_count;
     (void) results;
     

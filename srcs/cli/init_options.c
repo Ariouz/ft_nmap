@@ -11,14 +11,14 @@ void    init_opts()
         return ;
 
     g_opts->size = 0;
-    g_opts->hostname = NULL;
     g_opts->is_running = true;
     g_opts->sockfd_icmp = -1;
     g_opts->sockfd_udp = -1;
+    g_opts->ports = NULL;
     g_opts->port_count = 0;
-    g_opts->ports = malloc(sizeof(int));
-    if (!g_opts->ports)
-        return ;
+    g_opts->targets = NULL;
+    g_opts->target_count = 0;
+    
 }
 
 void init_default_options() {
@@ -33,7 +33,7 @@ void    init_cli_options()
 {
     init_opts();
     init_default_options();
-    if (!g_opts || !g_opts->options || !g_opts->ports)
+    if (!g_opts || !g_opts->options)
         fatal_error("Fatal: Failed to init CLI options");
 
     // add_option(OPT_FIRST_TTL, "First TTL (default 1)", 1, false);

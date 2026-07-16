@@ -70,26 +70,26 @@ static void fill_tcp_flags(struct tcphdr *tcp, t_scan scan)
     }
 }
 
-static void send_tcp_packet(int sockfd, struct in_addr source_ip, int port, t_scan scan, uint16_t source_port)
+static void send_tcp_packet(int sockfd, struct in_addr source_ip, int port, t_scan scan, uint16_t source_port, struct in_addr target_ip)
 {
     t_tcp_packet packet;
     struct sockaddr_in  target;
 
     memset(&packet, 0, sizeof(packet));
 
-    fill_ip_header(&packet.ip, source_ip, g_opts->target_ip, sizeof(t_tcp_packet), IPPROTO_TCP);
+    fill_ip_header(&packet.ip, source_ip, target_ip, sizeof(t_tcp_packet), IPPROTO_TCP);
     fill_tcp_header(&packet.tcp, port, source_port);
     fill_tcp_flags(&packet.tcp, scan);
     fill_tcp_checksum(&packet);
 
-    target = get_sockaddr(g_opts->target_ip, port);
+    target = get_sockaddr(target_ip, port);
 
     if (sendto(sockfd, &packet, sizeof(packet), 0,
             (struct sockaddr *)&target, sizeof(target)) == -1)
         fatal_error(strerror(errno));
 }
 
-static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16_t source_port)
+static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16_t source_port, struct in_addr target_ip)
 {
     struct pcap_pkthdr      *header;
     const unsigned char     *packet;
@@ -134,7 +134,7 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
             continue;
 
         ip = (struct iphdr *)ip_packet;
-        if (ip->saddr != g_opts->target_ip.s_addr)
+        if (ip->saddr != target_ip.s_addr)
             continue;
 
         /* ICMP */
@@ -211,8 +211,8 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
     return SCAN_OPEN_FILTERED;
 }
 
-const char *scan_tcp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, t_scan scan, uint16_t source_port)
+const char *scan_tcp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, t_scan scan, uint16_t source_port, struct in_addr target_ip)
 {
-    send_tcp_packet(sockfd, source_ip, port, scan, source_port);
-    return read_tcp_response(pcap, port, scan, source_port);
+    send_tcp_packet(sockfd, source_ip, port, scan, source_port, target_ip);
+    return read_tcp_response(pcap, port, scan, source_port, target_ip);
 }

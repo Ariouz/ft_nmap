@@ -44,7 +44,8 @@ void parse_cli_options(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p': parse_port_option(optarg); break;
-            case 'i': /* todo ip */ break;
+            case 'i': add_target(optarg); break;
+            case 'f': parse_file(optarg); break;
             // todo ...
             case 'h': print_help(); exit(0);
             #ifdef BONUS
