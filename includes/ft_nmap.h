@@ -79,6 +79,9 @@ typedef struct s_opts {
     int             sockfd_udp;
     struct in_addr  target_ip;
     int             scans[SCAN_COUNT];
+
+    int             *ports;
+    size_t          port_count;
 }   t_opts;
 
 extern t_opts *g_opts;
@@ -104,6 +107,7 @@ t_option        *get_option(int code);
 void            parse_cli_options(int argc, char **argv);
 
 void	        parse_types(char *input);
+void            parse_port_option(char *arg);
 
 struct sockaddr_in  get_sockaddr(struct in_addr target_ip, int port);
 void                send_socket(struct in_addr target_ip, int sockfd, size_t payload_size, int port);

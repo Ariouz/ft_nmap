@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 
 	parse_types(NULL); // hardcoded NULL
 
+	if (g_opts->port_count == 0) parse_port_option("1-1024");
 	trace();
 	clean_exit(0);
 	return (0);

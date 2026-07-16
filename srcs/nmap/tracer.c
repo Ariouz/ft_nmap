@@ -123,11 +123,11 @@ const char *scan_to_string(t_scan scan)
 
 void    trace()
 {
-    int             ports[] = {22, 80, 443, 8080, 12345};
-    int             port_count = sizeof(ports) / sizeof(ports[0]);
+    int             *ports = g_opts->ports;
     int             sockfd;
     pcap_t          *pcap;
     struct in_addr  source_ip;
+    struct timeval start, end;
 
     source_ip = get_source_ip(g_opts->target_ip);
     sockfd = open_raw_socket();
@@ -139,17 +139,22 @@ void    trace()
 
     uint16_t source_port = 42424;  //40000 + rand() % 20000;
     pcap = open_pcap();
+    gettimeofday(&start, NULL);
 
     // scans
-    for (int scan = 0; scan < SCAN_COUNT && g_opts->is_running; scan++)
+    for (size_t i = 0; i < g_opts->port_count && g_opts->is_running; i++)
     {
-        if (!g_opts->scans[scan])
-            continue;
-
-        printf("Scan: %s\n", scan_to_string(scan));
-
-        for (int i = 0; i < port_count && g_opts->is_running; i++)
+        printf("Port: %d\n", ports[i]);
+        for (int scan = 0; scan < SCAN_COUNT && g_opts->is_running; scan++)
         {
+
+            if (!g_opts->scans[scan])
+                continue;
+
+            struct pcap_pkthdr *h;
+            const unsigned char *p;
+            while (pcap_next_ex(pcap, &h, &p) == 1) ; // clear pcap cache
+
             const char *state;
 
             if (scan == SCAN_UDP)
@@ -165,6 +170,10 @@ void    trace()
 
         }
     }
+    gettimeofday(&end, NULL);
+    long long diff_ms = (end.tv_sec - start.tv_sec) * 1000LL + 
+                    (end.tv_usec - start.tv_usec) / 1000LL;
+    printf("Performed scans in %lldms\n", diff_ms);
 
     pcap_close(pcap);
     close(sockfd);

@@ -16,22 +16,27 @@ bool    process_option(t_option *option, char *value)
     return true;
 }
 
-void     parse_cli_options(int argc, char **argv)
-{
+void parse_cli_options(int argc, char **argv) {
+    struct option long_options[] = {
+        {"help",    no_argument,       0, 'h'},
+        {"ports",   required_argument, 0, 'p'},
+        {"ip",      required_argument, 0, 'i'},
+        {"file",    required_argument, 0, 'f'},
+        {"speedup", required_argument, 0, 's'},
+        {"scan",    required_argument, 0, 'c'},
+        {0, 0, 0, 0}
+    };
 
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--help") == 0)
-            print_help();
+    int opt, option_index = 0;
+    while ((opt = getopt_long(argc, argv, "h:p:i:f:s:c:", long_options, &option_index)) != -1) {
+        switch (opt) {
+            case 'p': parse_port_option(optarg); break;
+            case 'i': /* Logique IP */ break;
+            // ... autres options
+            case 'h': print_help(); exit(0);
+        }
     }
-
-    # ifdef BONUS
-    int opt;
-	while ((opt = getopt(argc, argv, "m:p:f:w:n")) != -1)
-		set_option(opt, optarg);
-    # endif
-   
 }
-
 bool    set_option(int opt, char *optarg)
 {
     t_option *option;

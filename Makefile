@@ -8,6 +8,7 @@ SRCS= $(addprefix srcs/, \
 	cli/cli_options.c \
 	cli/init_options.c \
 	cli/cli_options_parser.c \
+	cli/port_parser.c \
 	socket/socket_send.c \
 	socket/socket_receive.c \
 	signals/sig_handler.c \
