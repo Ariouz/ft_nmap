@@ -18,8 +18,8 @@ int main(int argc, char **argv)
 
 	size_t	index = 0;
 	while (index < g_opts->target_count) {
-		printf("\n\n");
 		trace(g_opts->targets[index]);
+		printf("\n\n");
 		index++;
 	}
 	clean_exit(0);

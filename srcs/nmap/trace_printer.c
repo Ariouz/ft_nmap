@@ -15,22 +15,33 @@ const char *scan_to_string(t_scan scan)
 }
 
 static bool is_open(const char *res) {
-    if (!res) return false;
     return strcmp(res, "open") == 0;
 }
 
 static bool is_any_scan_open(t_port_result res) {
     size_t  i = 0;
     while (i < SCAN_COUNT) {
+        if (!res.states[i]) {
+            i++;
+            continue;
+        }
         if (is_open(res.states[i])) return true;
         i++;
     }
     return false;
 }
 
-static char *get_conclusion(t_port_result res) {
-    if (is_any_scan_open(res)) return "Open";
-    return "Closed";
+const char *get_conclusion(t_port_result res) {
+    if (res.states[SCAN_SYN] && strcmp(res.states[SCAN_SYN], "open") == 0)
+        return "Open";
+
+    if (res.states[SCAN_SYN] && strcmp(res.states[SCAN_SYN], "filtered") == 0)
+        return "Filtered";
+
+    if (!is_open(res.states[SCAN_NULL]) || !is_open(res.states[SCAN_FIN]))
+        return "Closed";
+
+    return "Open|Filtered";
 }
 
 
@@ -48,7 +59,7 @@ static void print_port_row(t_port_result res)
     printf("%-8d %-20s ", res.port, serv_name);
     
     for (int scan = 0; scan < SCAN_COUNT; scan++) {
-        printf("%s(%s) ", scan_to_string(scan), res.states[scan]);
+        if (res.states[scan]) printf("%s(%s) ", scan_to_string(scan), res.states[scan]);
         
         if ((scan + 1) % 3 == 0 && (scan + 1) < SCAN_COUNT) 
             printf("\n%-28s", "");
