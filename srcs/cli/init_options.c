@@ -2,11 +2,11 @@
 
 void    init_opts()
 {
-    g_opts = (t_opts *) malloc(sizeof(t_opts));
+    g_opts = calloc(1, sizeof(*g_opts));
     if (!g_opts)
         return ;
     
-    g_opts->options = malloc(sizeof(t_option *) * MAX_OPTS);
+    g_opts->options = calloc(MAX_OPTS, sizeof(*g_opts->options));
     if (!g_opts->options)
         return ;
 
@@ -23,7 +23,9 @@ void    init_opts()
 
 void init_default_options() {
     g_opts->def_size = 4;
-    g_opts->def_options = malloc(sizeof(t_option *) * g_opts->def_size);
+    g_opts->def_options = calloc(g_opts->def_size, sizeof(*g_opts->def_options));
+    if (!g_opts->def_options)
+        fatal_error("Fatal: Failed to initialize default options");
     
     g_opts->def_options[0] = get_default_if_not_opt(OPT_SOURCE_PORT);
     g_opts->def_options[1] = get_default_if_not_opt(OPT_TTL);
@@ -34,9 +36,9 @@ void init_default_options() {
 void    init_cli_options()
 {
     init_opts();
-    init_default_options();
     if (!g_opts || !g_opts->options)
         fatal_error("Fatal: Failed to init CLI options");
+    init_default_options();
 
     #ifdef BONUS
     add_option(OPT_SOURCE_PORT, "Source port (default 42424)", 42424, true);
@@ -44,6 +46,7 @@ void    init_cli_options()
     add_option(OPT_OPEN, "Display only open ports", false, false);
     add_option(OPT_REASON, "Display the reason a port is in state", false, false);
     #endif
+    add_option(OPT_SPEEDUP, "Number of parallel threads (default 0, max 250)", 0, true);
 
 }
 

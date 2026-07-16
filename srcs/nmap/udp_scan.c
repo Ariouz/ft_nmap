@@ -2,8 +2,8 @@
 
 typedef struct s_udp_packet
 {
-    struct iphdr    ip;
-    struct udphdr   udp;
+    t_ip_header     ip;
+    t_udp_header    udp;
 } t_udp_packet;
 
 typedef struct s_udp_pseudo_header
@@ -15,33 +15,33 @@ typedef struct s_udp_pseudo_header
     uint16_t    udp_length;
 } t_udp_pseudo_header;
 
-static void fill_udp_header(struct udphdr *udp, int port, uint16_t source_port)
+static void fill_udp_header(t_udp_header *udp, int port, uint16_t source_port)
 {
     memset(udp, 0, sizeof(*udp));
 
     udp->source = htons(source_port);
     udp->dest = htons(port);
-    udp->len = htons(sizeof(struct udphdr));
+    udp->len = htons(sizeof(t_udp_header));
 }
 
 static void fill_udp_checksum(t_udp_packet *packet)
 {
     struct s_udp_pseudo_header pseudo;
-    unsigned char buf[sizeof(pseudo) + sizeof(struct udphdr)];
+    unsigned char buf[sizeof(pseudo) + sizeof(t_udp_header)];
 
     pseudo.source_addr = packet->ip.saddr;
     pseudo.dest_addr = packet->ip.daddr;
     pseudo.zero = 0;
     pseudo.protocol = IPPROTO_UDP;
-    pseudo.udp_length = htons(sizeof(struct udphdr));
+    pseudo.udp_length = htons(sizeof(t_udp_header));
 
     memcpy(buf, &pseudo, sizeof(pseudo));
-    memcpy(buf + sizeof(pseudo), &packet->udp, sizeof(struct udphdr));
+    memcpy(buf + sizeof(pseudo), &packet->udp, sizeof(t_udp_header));
 
     packet->udp.check = checksum(buf, sizeof(buf));
 }
 
-static void send_udp_packet( int sockfd, struct in_addr source_ip, int port, uint16_t source_port, struct in_addr target_ip)
+static int send_udp_packet( int sockfd, struct in_addr source_ip, int port, uint16_t source_port, struct in_addr target_ip)
 {
     t_udp_packet packet;
     struct sockaddr_in target;
@@ -57,7 +57,8 @@ static void send_udp_packet( int sockfd, struct in_addr source_ip, int port, uin
 
     if (sendto(sockfd, &packet, sizeof(packet), 0,
         (struct sockaddr *)&target, sizeof(target)) == -1)
-        fatal_error(strerror(errno));
+        return -1;
+    return 0;
 }
 
 static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_port, struct in_addr target_ip)
@@ -65,11 +66,11 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
     struct pcap_pkthdr      *header;
     const unsigned char     *packet;
     const unsigned char     *ip_packet;
-    struct iphdr            *ip;
-    struct udphdr           *udp;
-    struct icmphdr          *icmp;
-    struct iphdr            *inner_ip;
-    struct udphdr           *inner_udp;
+    t_ip_header             *ip;
+    t_udp_header            *udp;
+    t_icmp_header           *icmp;
+    t_ip_header             *inner_ip;
+    t_udp_header            *inner_udp;
     int                     datalink;
     int                     result;
     struct timeval          start;
@@ -94,7 +95,10 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
             continue;
         }
         if (result == -1)
-            fatal_error(pcap_geterr(pcap));
+        {
+            errno = EIO;
+            return NULL;
+        }
         if (result == -2)
             break;
 
@@ -102,7 +106,7 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
         if (!ip_packet)
             continue;
 
-        ip = (struct iphdr *)ip_packet;
+        ip = (t_ip_header *)ip_packet;
         if (ip->saddr != target_ip.s_addr)
             continue;
 
@@ -110,7 +114,7 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
 
         if (ip->protocol == IPPROTO_UDP)
         {
-            udp = (struct udphdr *)(ip_packet + ip->ihl * 4);
+            udp = (t_udp_header *)(ip_packet + ip->ihl * 4);
 
             if (ntohs(udp->source) == port &&
                 ntohs(udp->dest) == source_port)
@@ -124,17 +128,17 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
         if (ip->protocol != IPPROTO_ICMP)
             continue;
 
-        icmp = (struct icmphdr *)(ip_packet + ip->ihl * 4);
+        icmp = (t_icmp_header *)(ip_packet + ip->ihl * 4);
 
         if (icmp->type != ICMP_DEST_UNREACH)
             continue;
 
-        inner_ip = (struct iphdr *)(icmp + 1);
+        inner_ip = (t_ip_header *)(icmp + 1);
 
         if (inner_ip->protocol != IPPROTO_UDP)
             continue;
 
-        inner_udp = (struct udphdr *)((unsigned char *)inner_ip +
+        inner_udp = (t_udp_header *)((unsigned char *)inner_ip +
             inner_ip->ihl * 4);
 
         if (ntohs(inner_udp->source) != source_port ||
@@ -163,6 +167,6 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
 
 const char *scan_udp_port(int sockfd, pcap_t *pcap, struct in_addr source_ip, uint16_t port, uint16_t source_port, struct in_addr target_ip)
 {
-    send_udp_packet(sockfd, source_ip, port, source_port, target_ip);
+    if (send_udp_packet(sockfd, source_ip, port, source_port, target_ip) == -1) return NULL;
     return read_udp_response(pcap, port, source_port, target_ip);
 }

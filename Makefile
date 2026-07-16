@@ -21,7 +21,7 @@ SRCS= $(addprefix srcs/, \
 OBJS= $(SRCS:.c=.o)
 
 NAME= ft_nmap
-FLAGS= -Wall -Werror -Wextra
+FLAGS= -Wall -Werror -Wextra -pthread
 INCLUDES= -Iincludes/
 PCAP_LIB= -lpcap
 

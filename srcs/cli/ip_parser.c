@@ -1,13 +1,19 @@
 #include "ft_nmap.h"
 
 void add_target(const char *ip) {
-    struct in_addr resolved_ip = resolve_ip(strdup(ip));
+    struct in_addr resolved_ip = resolve_ip(ip);
+    struct in_addr *targets;
+
     if (resolved_ip.s_addr == INADDR_NONE) {
         char s[256];
         sprintf(s, "Invalid address: %s", ip);
         fatal_error(s);
     }
-    g_opts->targets = realloc(g_opts->targets, sizeof(struct in_addr) * (g_opts->target_count + 1));
+    targets = realloc(g_opts->targets,
+            sizeof(struct in_addr) * (g_opts->target_count + 1));
+    if (!targets)
+        fatal_error("Memory allocation failed");
+    g_opts->targets = targets;
     g_opts->targets[g_opts->target_count] = resolved_ip;
     g_opts->target_count++;
 }
