@@ -22,11 +22,12 @@ void    init_opts()
 }
 
 void init_default_options() {
-    g_opts->def_size = 2;
+    g_opts->def_size = 3;
     g_opts->def_options = malloc(sizeof(t_option *) * g_opts->def_size);
     
     g_opts->def_options[0] = get_default_if_not_opt(OPT_SOURCE_PORT);
     g_opts->def_options[1] = get_default_if_not_opt(OPT_TTL);
+    g_opts->def_options[2] = get_default_if_not_opt(OPT_OPEN);
 }
 
 void    init_cli_options()
@@ -36,14 +37,10 @@ void    init_cli_options()
     if (!g_opts || !g_opts->options)
         fatal_error("Fatal: Failed to init CLI options");
 
-    // add_option(OPT_FIRST_TTL, "First TTL (default 1)", 1, false);
-    // add_option(OPT_MAX_TTL, "Max TTL (default 30)", 30, false);
-    // add_option(OPT_NO_DNS, "Disables DNS resolution", false, false);
-    // add_option(OPT_PORT, "The base UDP packet port (default 33434)", 33434, false);
-    // add_option(OPT_SOCK_TIMEOUT, "Max time (in seconds) to wait for a probe (default 1)", 1, false);
     #ifdef BONUS
     add_option(OPT_SOURCE_PORT, "Source port (default 42424)", 42424, true);
     add_option(OPT_TTL, "Packet TTL", DEFAULT_TTL, true);
+    add_option(OPT_OPEN, "Display only open ports", false, false);
     #endif
 
 }

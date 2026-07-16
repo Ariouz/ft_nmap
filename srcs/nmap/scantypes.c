@@ -32,7 +32,7 @@ void	parse_types(char *input)
 	len = split(input, ',', &split_types);
 
 	if (len <= 0)
-		fatal_error("Invalid scan types.");
+		fatal_error("Invalid scan types (SYN, ACK, FIN, XMAS, NULL, UDP).");
 
 	i = 0;
 	while (i < len)
@@ -82,5 +82,5 @@ void	parse_types(char *input)
 	free_split(split_types, len);
 
 	if (i != len)
-		fatal_error("Invalid scan types.");
+		fatal_error("Invalid scan types (SYN, ACK, FIN, XMAS, NULL, UDP).");
 }

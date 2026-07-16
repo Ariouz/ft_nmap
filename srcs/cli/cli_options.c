@@ -4,6 +4,7 @@ int def_value(int code) {
     switch (code) {
         case OPT_SOURCE_PORT: return 42424; break;
         case OPT_TTL: return DEFAULT_TTL; break;
+        case OPT_OPEN: return false; break;
         default: return 0; break;
     }
     return 0;
@@ -31,27 +32,4 @@ t_option *get_option(int code) {
     }
     
     return NULL;
-}
-
-void print_help()
-{
-    printf("Usage: ft_nmap [options] <destination>\nOptions:\n");
-
-    printf("\t --help\t\t\tDisplay this help list\n");
-
-    # ifdef BONUS
-    size_t  index = 0;
-    while (index < g_opts->size) {
-        t_option *opt = g_opts->options[index];
-
-        printf("\t -%c", opt->code);
-        if (opt->requires_value) printf(" <value>");
-        printf("\t\t\t%s\n", opt->description);
-
-        index++;
-    }
-    # endif
-
-    clean_free(g_opts);
-    exit(0);
 }

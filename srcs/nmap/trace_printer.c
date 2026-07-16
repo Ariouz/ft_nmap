@@ -82,6 +82,7 @@ void print_final_results(t_port_result *results, size_t port_count, struct in_ad
             print_port_row(results[i]);
     }
 
+    if (get_option(OPT_OPEN)) return ;
     printf("\nClosed/Filtered/Unfiltered ports:\n");
     print_table_header();
     for (size_t i = 0; i < port_count; i++) {

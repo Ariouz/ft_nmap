@@ -1,12 +1,22 @@
 #include "ft_nmap.h"
 
+struct option long_options[] = {
+    {"help",    no_argument,       0, 'h'},
+    {"ports",   required_argument, 0, 'p'},
+    {"ip",      required_argument, 0, 'i'},
+    {"file",    required_argument, 0, 'f'},
+    {"speedup", required_argument, 0, 's'},
+    {"scan",    required_argument, 0, 'c'},
+    #ifdef BONUS
+    {"source-port",    required_argument, 0, 'g'},
+    {"ttl",    required_argument, 0, 't'},
+    {"open",    no_argument, 0, 'o'},
+    #endif
+    {0, 0, 0, 0}
+};
+
 bool    process_option(t_option *option, char *value)
 {
-    
-    
-    // else if (option->code == OPT_NO_DNS)
-    //     option->value = 1;
-
     (void) option;
     (void) value;
     #ifdef BONUS
@@ -20,25 +30,11 @@ bool    process_option(t_option *option, char *value)
 }
 
 void parse_cli_options(int argc, char **argv) {
-    struct option long_options[] = {
-        {"help",    no_argument,       0, 'h'},
-        {"ports",   required_argument, 0, 'p'},
-        {"ip",      required_argument, 0, 'i'},
-        {"file",    required_argument, 0, 'f'},
-        {"speedup", required_argument, 0, 's'},
-        {"scan",    required_argument, 0, 'c'},
-        #ifdef BONUS
-        {"source-port",    required_argument, 0, 'g'},
-        {"ttl",    required_argument, 0, 't'},
-        #endif
-        {0, 0, 0, 0}
-    };
-
     int opt, option_index = 0;
     #ifndef BONUS
     char *options = "h:p:i:f:s:c:";
     #else
-    char *options = "h:p:i:f:s:c:g:t:";
+    char *options = "h:p:i:f:s:c:g:t:o";
     #endif
 
     while ((opt = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
@@ -51,10 +47,12 @@ void parse_cli_options(int argc, char **argv) {
             #ifdef BONUS
             case 'g': set_option(opt, optarg); break;
             case 't': set_option(opt, optarg); break;
+            case 'o': set_option(opt, optarg); break;
             #endif
         }
     }
 }
+
 bool    set_option(int opt, char *optarg)
 {
     t_option *option;
@@ -87,4 +85,27 @@ int parse_opt_int(char *value, int min, int max)
         fatal_error("Option value is too big");
 
     return (int) val;
+}
+
+
+void print_help() {
+    printf("Usage: ft_nmap [options]\n\n");
+    printf("Options:\n");
+    printf("  -h, --help\t\tDisplay this help list\n");
+    printf("  -p, --ports <ports>\tScan only specified ports (e.g., 80,443)\n");
+    printf("  -i, --ip <ip>\t\tTarget IP address\n");
+    printf("  -f, --file <file>\tRead target from file\n");
+    printf("  -s, --speedup <n>\tNumber of parallel threads (default 0, max 250)\n");
+    printf("  -c, --scan <type>\tSpecify scan type (SYN, ACK, FIN, XMAS, NULL, UDP)\n");
+
+    #ifdef BONUS
+    printf("\nBonus Options:\n");
+    printf("  -g, --source-port <port>\tUse specific source port\n");
+    printf("  -t, --ttl <ttl>\t\tSet time-to-live\n");
+    printf("  -o, --open\t\t\tShow only open ports\n");
+    #endif
+
+    printf("\n");
+
+    clean_exit(0);
 }
