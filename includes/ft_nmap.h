@@ -25,13 +25,10 @@
 # define true 1
 # define false 0
 
-# define SOCK_RTT_BATCH_SIZE 10
+# define DEFAULT_TTL 64
 
-# define OPT_FIRST_TTL 'f'
-# define OPT_MAX_TTL 'm'
-# define OPT_PORT 'p'
-# define OPT_SOCK_TIMEOUT 'w'
-# define OPT_NO_DNS 'n'
+# define OPT_SOURCE_PORT 'g'
+# define OPT_TTL 't'
 
 # define SCAN_OPEN            "open"
 # define SCAN_CLOSED          "closed"
@@ -61,6 +58,7 @@ typedef enum e_scan
 typedef struct s_port_result {
     int         port;
     const char  *states[SCAN_COUNT];
+    bool        is_scanned;
 }   t_port_result;
 
 typedef struct s_option {
@@ -74,7 +72,7 @@ typedef struct s_opts {
     t_option        **options;
     size_t          size;
     char            *hostname;
-    bool            is_running;
+    volatile sig_atomic_t            is_running;
     int             sockfd_icmp;
     int             sockfd_udp;
     struct in_addr  target_ip;

@@ -59,10 +59,13 @@ static void print_port_row(t_port_result res)
 void print_final_results(t_port_result *results, size_t port_count)
 {
     printf("\nIP address: %s\n", to_str(g_opts->target_ip));
+    (void) port_count;
+    (void) results;
     
     printf("Open ports:\n");
     print_table_header();
     for (size_t i = 0; i < port_count; i++) {
+        if (!results[i].is_scanned) continue;
         if (is_any_scan_open(results[i]))
             print_port_row(results[i]);
     }
@@ -70,6 +73,7 @@ void print_final_results(t_port_result *results, size_t port_count)
     printf("\nClosed/Filtered/Unfiltered ports:\n");
     print_table_header();
     for (size_t i = 0; i < port_count; i++) {
+        if (!results[i].is_scanned) continue;
         if (!is_any_scan_open(results[i]))
             print_port_row(results[i]);
     }

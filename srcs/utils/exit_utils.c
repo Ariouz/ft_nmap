@@ -24,7 +24,7 @@ void    free_options(t_option **options, size_t opt_len)
 
     while (index < opt_len)
     {
-        free(options[index]);
+        if (options[index]) free(options[index]);
         index++;
     }
     free(options);

@@ -107,7 +107,7 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
 
     datalink = pcap_datalink(pcap);
     gettimeofday(&start, NULL);
-    timeout_ms = get_option(OPT_SOCK_TIMEOUT)->value * 1000LL;
+    timeout_ms = 1 * 1000LL; //todo ? get_option(OPT_SOCK_TIMEOUT)->value
 
     while (g_opts->is_running)
     {

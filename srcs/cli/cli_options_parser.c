@@ -2,16 +2,19 @@
 
 bool    process_option(t_option *option, char *value)
 {
-    if (option->code == OPT_FIRST_TTL
-        || option->code == OPT_MAX_TTL
-        || option->code == OPT_SOCK_TIMEOUT)
-        option->value = parse_opt_int(value, 1, INT32_MAX);
     
-    else if (option->code == OPT_NO_DNS)
-        option->value = 1;
+    
+    // else if (option->code == OPT_NO_DNS)
+    //     option->value = 1;
 
-    else if (option->code == OPT_PORT)
+    (void) option;
+    (void) value;
+    #ifdef BONUS
+    if (option->code == OPT_SOURCE_PORT)
         option->value = parse_opt_int(value, 1, 65535);
+    if (option->code == OPT_TTL)
+        option->value = parse_opt_int(value, 1, INT32_MAX);
+    #endif
 
     return true;
 }
@@ -24,16 +27,30 @@ void parse_cli_options(int argc, char **argv) {
         {"file",    required_argument, 0, 'f'},
         {"speedup", required_argument, 0, 's'},
         {"scan",    required_argument, 0, 'c'},
+        #ifdef BONUS
+        {"source-port",    required_argument, 0, 'g'},
+        {"ttl",    required_argument, 0, 't'},
+        #endif
         {0, 0, 0, 0}
     };
 
     int opt, option_index = 0;
-    while ((opt = getopt_long(argc, argv, "h:p:i:f:s:c:", long_options, &option_index)) != -1) {
+    #ifndef BONUS
+    char *options = "h:p:i:f:s:c:";
+    #else
+    char *options = "h:p:i:f:s:c:g:t:";
+    #endif
+
+    while ((opt = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p': parse_port_option(optarg); break;
-            case 'i': /* Logique IP */ break;
-            // ... autres options
+            case 'i': /* todo ip */ break;
+            // todo ...
             case 'h': print_help(); exit(0);
+            #ifdef BONUS
+            case 'g': set_option(opt, optarg); break;
+            case 't': set_option(opt, optarg); break;
+            #endif
         }
     }
 }

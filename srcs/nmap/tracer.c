@@ -47,7 +47,7 @@ void fill_ip_header(struct iphdr *ip, struct in_addr source_ip, struct in_addr t
     ip->version = 4;
     ip->tot_len = htons(total_len);
     ip->id = htons((unsigned short)getpid());
-    ip->ttl = 64;
+    ip->ttl = get_option(OPT_TTL)->value;
     ip->protocol = protocol;
     ip->saddr = source_ip.s_addr;
     ip->daddr = target_ip.s_addr;
@@ -76,7 +76,7 @@ static pcap_t *open_pcap()
     struct bpf_program  program;
 
     handle = pcap_open_live("any", 65535, 0,
-            get_option(OPT_SOCK_TIMEOUT)->value * 1000, errbuf);
+            1 * 1000, errbuf); // todo ? get_option(OPT_SOCK_TIMEOUT)->value
     if (!handle)
         fatal_error(errbuf);
     if (pcap_setnonblock(handle, 1, errbuf) == -1)
@@ -117,25 +117,28 @@ void    trace()
     struct in_addr  source_ip;
     struct timeval  start, end;
 
-    t_port_result   *results = malloc(sizeof(t_port_result) * g_opts->port_count);
+    t_port_result   *results = calloc(g_opts->port_count, sizeof(t_port_result));
 
     source_ip = get_source_ip(g_opts->target_ip);
     sockfd = open_raw_socket();
-    if (get_option(OPT_NO_DNS)->value == true)
-        printf("ft_nmap scan %s\n", to_str(g_opts->target_ip));
-    else
-        printf("ft_nmap scan %s (%s)\n", g_opts->hostname, to_str(g_opts->target_ip));
+    printf("ft_nmap scan %s (%s)\n", g_opts->hostname, to_str(g_opts->target_ip));
 
-    
 
-    uint16_t source_port = 42424; // todo --g/--source-port
+    #ifdef BONUS
+    uint16_t source_port = get_option(OPT_SOURCE_PORT)->value;
+    #else
+    uint16_t source_port = 42424;
+    #endif
+
+    printf("Source port: %d\n", source_port);
+    printf("Packet TLL: %d\n", get_option(OPT_TTL)->value);
+
     pcap = open_pcap();
     gettimeofday(&start, NULL);
 
     // scans
     for (size_t i = 0; i < g_opts->port_count && g_opts->is_running; i++)
     {
-        printf("Port: %d\n", ports[i]);
         for (int scan = 0; scan < SCAN_COUNT && g_opts->is_running; scan++)
         {
 
@@ -145,6 +148,7 @@ void    trace()
             struct pcap_pkthdr *h;
             const unsigned char *p;
             while (pcap_next_ex(pcap, &h, &p) == 1) ; // clear pcap cache
+            if (!g_opts->is_running) break;
 
             const char *state;
 
@@ -156,14 +160,17 @@ void    trace()
             results[i].port = ports[i];
             results[i].states[scan] = state;
         }
+        if (g_opts->is_running) results[i].is_scanned = true; // if loop exit cause is signal, we musn't the port as scanned
     }
     gettimeofday(&end, NULL);
     long long diff_ms = (end.tv_sec - start.tv_sec) * 1000LL + 
                     (end.tv_usec - start.tv_usec) / 1000LL;
     printf("Performed scans in %lldms\n", diff_ms);
 
-    pcap_close(pcap);
-    close(sockfd);
+    if (pcap) pcap_close(pcap);
+    if (sockfd >= 0) close(sockfd);
 
     print_final_results(results, g_opts->port_count);
+    free(results);
+	clean_exit(0);
 }

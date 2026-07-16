@@ -78,7 +78,7 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
 
     datalink = pcap_datalink(pcap);
     gettimeofday(&start, NULL);
-    timeout_ms = get_option(OPT_SOCK_TIMEOUT)->value * 1000LL;
+    timeout_ms = 1 * 1000LL; // todo ? get_option(OPT_SOCK_TIMEOUT)->valu
 
     while (g_opts->is_running)
     {

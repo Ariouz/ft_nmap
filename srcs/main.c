@@ -6,6 +6,7 @@ int main(int argc, char **argv)
 {
 	init_cli_options(argc, argv);
 	parse_cli_options(argc, argv);
+	handle_signals();
 
 	int args_count = argc - optind;
 
@@ -20,12 +21,10 @@ int main(int argc, char **argv)
 	if (g_opts->target_ip.s_addr == INADDR_NONE)
 		fatal_error("Unknown host");
 
-	handle_signals();
 
 	parse_types(NULL); // hardcoded NULL
 
 	if (g_opts->port_count == 0) parse_port_option("1-1024");
 	trace();
-	clean_exit(0);
 	return (0);
 }

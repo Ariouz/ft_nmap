@@ -27,11 +27,16 @@ void    init_cli_options()
     if (!g_opts || !g_opts->options || !g_opts->ports)
         fatal_error("Fatal: Failed to init CLI options");
 
-    add_option(OPT_FIRST_TTL, "First TTL (default 1)", 1, false);
-    add_option(OPT_MAX_TTL, "Max TTL (default 30)", 30, false);
-    add_option(OPT_NO_DNS, "Disables DNS resolution", false, false);
-    add_option(OPT_PORT, "The base UDP packet port (default 33434)", 33434, false);
-    add_option(OPT_SOCK_TIMEOUT, "Max time (in seconds) to wait for a probe (default 1)", 1, false);
+    // add_option(OPT_FIRST_TTL, "First TTL (default 1)", 1, false);
+    // add_option(OPT_MAX_TTL, "Max TTL (default 30)", 30, false);
+    // add_option(OPT_NO_DNS, "Disables DNS resolution", false, false);
+    // add_option(OPT_PORT, "The base UDP packet port (default 33434)", 33434, false);
+    // add_option(OPT_SOCK_TIMEOUT, "Max time (in seconds) to wait for a probe (default 1)", 1, false);
+    #ifdef BONUS
+    add_option(OPT_SOURCE_PORT, "Source port (default 42424)", 42424, true);
+    add_option(OPT_TTL, "Packet TTL", DEFAULT_TTL, true);
+    #endif
+
 }
 
 void        add_option(int code, char *description, int default_value, bool requires_value)
