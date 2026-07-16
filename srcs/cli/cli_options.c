@@ -20,24 +20,17 @@ t_option    *get_default_if_not_opt(int code) {
     return def;
 }
 
-t_option    *get_option(int code)
-{
-    size_t      index;
-    index = 0;
-
-    t_option    *res = NULL;
-
-    while (index < g_opts->size)
-    {
-        if (code == g_opts->options[index]->code) {
-            res = g_opts->options[index];
-            break ;
-        }
-        index++;
+t_option *get_option(int code) {
+    for (size_t i = 0; i < g_opts->size; i++) {
+        if (g_opts->options[i]->code == code) return g_opts->options[i];
     }
-
-    if (!res) return get_default_if_not_opt(code);
-    return res;
+    
+    // defaults
+    for (size_t i = 0; i < g_opts->def_size; i++) {
+        if (g_opts->def_options[i]->code == code) return g_opts->def_options[i];
+    }
+    
+    return NULL;
 }
 
 void print_help()

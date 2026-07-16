@@ -70,7 +70,9 @@ typedef struct s_option {
 
 typedef struct s_opts {
     t_option        **options;
+    t_option        **def_options;
     size_t          size;
+    size_t          def_size;
     char            *hostname;
     volatile sig_atomic_t            is_running;
     int             sockfd_icmp;
@@ -103,6 +105,7 @@ bool            process_option(t_option *option, char *value);
 
 t_option        *get_option(int code);
 void            parse_cli_options(int argc, char **argv);
+t_option        *get_default_if_not_opt(int code);
 
 void	        parse_types(char *input);
 void            parse_port_option(char *arg);

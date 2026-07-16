@@ -21,9 +21,18 @@ void    init_opts()
         return ;
 }
 
+void init_default_options() {
+    g_opts->def_size = 2;
+    g_opts->def_options = malloc(sizeof(t_option *) * g_opts->def_size);
+    
+    g_opts->def_options[0] = get_default_if_not_opt(OPT_SOURCE_PORT);
+    g_opts->def_options[1] = get_default_if_not_opt(OPT_TTL);
+}
+
 void    init_cli_options()
 {
     init_opts();
+    init_default_options();
     if (!g_opts || !g_opts->options || !g_opts->ports)
         fatal_error("Fatal: Failed to init CLI options");
 
