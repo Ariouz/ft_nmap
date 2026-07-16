@@ -30,6 +30,7 @@ void	parse_types(char *input)
 
 	split_types = NULL;
 	len = split(input, ',', &split_types);
+
 	if (len <= 0)
 		fatal_error("Invalid scan types.");
 

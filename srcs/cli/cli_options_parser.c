@@ -46,7 +46,7 @@ void parse_cli_options(int argc, char **argv) {
             case 'p': parse_port_option(optarg); break;
             case 'i': add_target(optarg); break;
             case 'f': parse_file(optarg); break;
-            // todo ...
+            case 'c': parse_types(optarg); break;
             case 'h': print_help(); exit(0);
             #ifdef BONUS
             case 'g': set_option(opt, optarg); break;

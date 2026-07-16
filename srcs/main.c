@@ -11,11 +11,8 @@ int main(int argc, char **argv)
 	int args_count = argc - optind;
 	(void) args_count;
 
-	parse_types(NULL); // hardcoded NULL
-
 	if (g_opts->port_count == 0) parse_port_option("1-1024");
 	
-	printf("t");
 	if (g_opts->target_count == 0)
 		print_help();
 

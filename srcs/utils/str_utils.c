@@ -1,62 +1,31 @@
 # include "ft_nmap.h"
 
-int split (char *str, char c, char ***arr)
-{
+int split(char *str, char c, char ***arr) {
     int count = 1;
-    int token_len = 1;
+    char *p = str;
+    
+    while (*p) if (*p++ == c) count++;
+    
+    *arr = (char **)malloc(sizeof(char *) * (count + 1));
+    if (!*arr) return -1;
+    (*arr)[count] = NULL;
+
     int i = 0;
-    char *p;
-    char *t;
-
-    p = str;
-    while (*p != '\0')
-    {
-        if (*p == c)
-            count++;
-        p++;
+    char *start = str;
+    char *end;
+    while (i < count) {
+        end = strchr(start, c);
+        size_t len = end ? (size_t)(end - start) : strlen(start);
+        
+        (*arr)[i] = (char *)malloc(len + 1);
+        if (!(*arr)[i]) return -1;
+        
+        strncpy((*arr)[i], start, len);
+        (*arr)[i][len] = '\0';
+        
+        if (!end) break;
+        start = end + 1;
+        i++;
     }
-
-    *arr = (char**) malloc(sizeof(char*) * count);
-    if (*arr == NULL)
-        exit(1);
-
-    p = str;
-    while (*p != '\0')
-    {
-        if (*p == c)
-        {
-            (*arr)[i] = (char*) malloc( sizeof(char) * token_len );
-            if ((*arr)[i] == NULL)
-                exit(1);
-
-            token_len = 0;
-            i++;
-        }
-        p++;
-        token_len++;
-    }
-    (*arr)[i] = (char*) malloc( sizeof(char) * token_len );
-    if ((*arr)[i] == NULL)
-        exit(1);
-
-    i = 0;
-    p = str;
-    t = ((*arr)[i]);
-    while (*p != '\0')
-    {
-        if (*p != c && *p != '\0')
-        {
-            *t = *p;
-            t++;
-        }
-        else
-        {
-            *t = '\0';
-            i++;
-            t = ((*arr)[i]);
-        }
-        p++;
-    }
-
     return count;
 }

@@ -15,6 +15,7 @@ const char *scan_to_string(t_scan scan)
 }
 
 static bool is_open(const char *res) {
+    if (!res) return false;
     return strcmp(res, "open") == 0;
 }
 

@@ -146,9 +146,6 @@ void    trace(struct in_addr target_ip)
             if (!g_opts->scans[scan])
                 continue;
 
-            struct pcap_pkthdr *h;
-            const unsigned char *p;
-            while (pcap_next_ex(pcap, &h, &p) == 1) ; // clear pcap cache
             if (!g_opts->is_running) break;
 
             const char *state;
@@ -172,6 +169,6 @@ void    trace(struct in_addr target_ip)
     if (sockfd >= 0) close(sockfd);
 
     print_final_results(results, g_opts->port_count, target_ip);
-    free(results);
-    free(hostname);
+    if (results) free(results);
+    if (hostname) free(hostname);
 }

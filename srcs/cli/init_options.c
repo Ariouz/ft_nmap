@@ -18,7 +18,7 @@ void    init_opts()
     g_opts->port_count = 0;
     g_opts->targets = NULL;
     g_opts->target_count = 0;
-    
+	parse_types(NULL); // default scans
 }
 
 void init_default_options() {
