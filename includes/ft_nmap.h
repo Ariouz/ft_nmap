@@ -20,17 +20,31 @@
 # include <getopt.h>
 # include <signal.h>
 # include <stdint.h>
+# include <pthread.h>
 # include <pcap.h>
+
+# ifndef ICMP_DEST_UNREACH
+#  define ICMP_DEST_UNREACH ICMP_UNREACH
+#  define ICMP_HOST_UNREACH ICMP_UNREACH_HOST
+#  define ICMP_PROT_UNREACH ICMP_UNREACH_PROTOCOL
+#  define ICMP_PORT_UNREACH ICMP_UNREACH_PORT
+#  define ICMP_NET_ANO ICMP_UNREACH_NET_PROHIB
+#  define ICMP_HOST_ANO ICMP_UNREACH_HOST_PROHIB
+#  define ICMP_PKT_FILTERED ICMP_UNREACH_FILTER_PROHIB
+# endif
 
 # define true 1
 # define false 0
 
 # define DEFAULT_TTL 64
+# define MAX_THREADS 250
+# define MAX_PORTS 1024
 
 # define OPT_SOURCE_PORT 'g'
 # define OPT_TTL 't'
 # define OPT_OPEN 'o'
 # define OPT_REASON 'r'
+# define OPT_SPEEDUP 's'
 
 # define SCAN_OPEN            "open"
 # define SCAN_CLOSED          "closed"
@@ -45,6 +59,77 @@
 #define SCAN_FILTERED "filtered"
 
 typedef int bool;
+
+typedef struct s_ip_header {
+# if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    unsigned char   ihl:4;
+    unsigned char   version:4;
+# else
+    unsigned char   version:4;
+    unsigned char   ihl:4;
+# endif
+    uint8_t         tos;
+    uint16_t        tot_len;
+    uint16_t        id;
+    uint16_t        frag_off;
+    uint8_t         ttl;
+    uint8_t         protocol;
+    uint16_t        check;
+    uint32_t        saddr;
+    uint32_t        daddr;
+}   t_ip_header;
+
+typedef struct s_tcp_header {
+    uint16_t        source;
+    uint16_t        dest;
+    uint32_t        seq;
+    uint32_t        ack_seq;
+# if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    unsigned char   res1:4;
+    unsigned char   doff:4;
+    unsigned char   fin:1;
+    unsigned char   syn:1;
+    unsigned char   rst:1;
+    unsigned char   psh:1;
+    unsigned char   ack:1;
+    unsigned char   urg:1;
+    unsigned char   ece:1;
+    unsigned char   cwr:1;
+# else
+    unsigned char   doff:4;
+    unsigned char   res1:4;
+    unsigned char   cwr:1;
+    unsigned char   ece:1;
+    unsigned char   urg:1;
+    unsigned char   ack:1;
+    unsigned char   psh:1;
+    unsigned char   rst:1;
+    unsigned char   syn:1;
+    unsigned char   fin:1;
+# endif
+    uint16_t        window;
+    uint16_t        check;
+    uint16_t        urg_ptr;
+}   t_tcp_header;
+
+typedef struct s_udp_header {
+    uint16_t        source;
+    uint16_t        dest;
+    uint16_t        len;
+    uint16_t        check;
+}   t_udp_header;
+
+typedef struct s_icmp_header {
+    uint8_t         type;
+    uint8_t         code;
+    uint16_t        checksum;
+    uint32_t        rest;
+}   t_icmp_header;
+
+typedef struct s_requests {
+    float rtt;
+    struct sockaddr_in responder;
+}  t_requests;
 
 typedef enum e_scan
 {
@@ -75,7 +160,7 @@ typedef struct s_opts {
     t_option        **def_options;
     size_t          size;
     size_t          def_size;
-    volatile sig_atomic_t            is_running;
+    bool            is_running;
     int             sockfd_icmp;
     int             sockfd_udp;
     struct in_addr  *targets;
@@ -119,19 +204,16 @@ void            print_help();
 void            clean_free();
 void            free_options(t_option **options, size_t opt_len);
 
-bool            is_runnning();
-
 void            exit_error();
 void            fatal_error(char *msg);
 void            clean_exit(int code);
 
 long long       get_time_ms(struct timeval tv);
-long long       get_time_us(struct timeval tv);
 int		        multisleep(long max_time_millis, long increment);
 
 int             split (char *str, char c, char ***arr);
 
-void                fill_ip_header(struct iphdr *ip, struct in_addr source_ip, struct in_addr target_ip, uint16_t total_len, uint8_t protocol);
+void                fill_ip_header(t_ip_header *ip, struct in_addr source_ip, struct in_addr target_ip, uint16_t total_len, uint8_t protocol);
 const unsigned char *get_ip_packet(const unsigned char *packet, int datalink);
 unsigned short      checksum(void *data, size_t len);
 void                trace(struct in_addr target_ip);

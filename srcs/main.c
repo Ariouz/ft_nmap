@@ -4,7 +4,7 @@ t_opts *g_opts = NULL;
 
 int main(int argc, char **argv)
 {
-	init_cli_options(argc, argv);
+	init_cli_options();
 	parse_cli_options(argc, argv);
 	handle_signals();
 

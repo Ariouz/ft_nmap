@@ -5,8 +5,8 @@ struct option long_options[] = {
     {"ports",   required_argument, 0, 'p'},
     {"ip",      required_argument, 0, 'i'},
     {"file",    required_argument, 0, 'f'},
-    {"speedup", required_argument, 0, 's'},
     {"scan",    required_argument, 0, 'c'},
+    {"speedup", required_argument, NULL, OPT_SPEEDUP},
     #ifdef BONUS
     {"source-port",    required_argument, 0, 'g'},
     {"ttl",    required_argument, 0, 't'},
@@ -18,8 +18,6 @@ struct option long_options[] = {
 
 bool    process_option(t_option *option, char *value)
 {
-    (void) option;
-    (void) value;
     #ifdef BONUS
     if (option->code == OPT_SOURCE_PORT)
         option->value = parse_opt_int(value, 1, 65535);
@@ -27,15 +25,19 @@ bool    process_option(t_option *option, char *value)
         option->value = parse_opt_int(value, 1, INT32_MAX);
     #endif
 
+    if (option->code == OPT_SPEEDUP)
+        option->value = parse_opt_int(value, 0, MAX_THREADS);
+
     return true;
 }
+
 
 void parse_cli_options(int argc, char **argv) {
     int opt, option_index = 0;
     #ifndef BONUS
-    char *options = "h:p:i:f:s:c:";
+    char *options = "hp:i:f:s:c:";
     #else
-    char *options = "h:p:i:f:s:c:g:t:or";
+    char *options = "hp:i:f:s:c:g:t:or";
     #endif
 
     while ((opt = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
@@ -44,6 +46,7 @@ void parse_cli_options(int argc, char **argv) {
             case 'i': add_target(optarg); break;
             case 'f': parse_file(optarg); break;
             case 'c': parse_types(optarg); break;
+            case 's': set_option(opt, optarg); break;
             case 'h': print_help(); exit(0);
             #ifdef BONUS
             case 'g': set_option(opt, optarg); break;
@@ -76,7 +79,10 @@ int parse_opt_int(char *value, int min, int max)
     if (endptr == value)
         fatal_error("Option value must be a valid integer");
 
-    if (errno != 0 && val == 0)
+    if (*endptr != '\0')
+        fatal_error("Option value must be a valid integer");
+
+    if (errno != 0)
         fatal_error(strerror(errno));
 
     if (val < min)
