@@ -95,7 +95,7 @@ static void print_port_row(t_port_result res)
     }
     printf("%-15s ", get_conclusion(res));
     #ifdef BONUS
-        if (get_option(OPT_REASON)->value) printf("%-10s", get_reason(res));
+        if (get_option(OPT_REASON)->value == true) printf("%-10s", get_reason(res));
     #endif
     printf("\n");
 }

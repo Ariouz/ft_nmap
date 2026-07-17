@@ -61,6 +61,7 @@ void parse_cli_options(int argc, char **argv) {
             case 't': set_option(opt, optarg); break;
             case 'o': set_option(opt, optarg); break;
             case 'b': set_option(opt, optarg); break;
+            case 'r': set_option(opt, optarg); break;
             case 'n': set_option(opt, optarg); break;
             #endif
             case ':':
