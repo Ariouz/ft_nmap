@@ -123,7 +123,7 @@ void    trace(struct in_addr target_ip)
     source_ip = get_source_ip(target_ip);
     sockfd = open_raw_socket();
     hostname = get_hostname(to_str(target_ip));
-    printf("ft_nmap scan %s (%s)\n", hostname, to_str(target_ip));
+    printf("Target IP address: %s (%s)\n", hostname, to_str(target_ip));
 
     #ifdef BONUS
     uint16_t source_port = get_option(OPT_SOURCE_PORT)->value;
@@ -133,6 +133,8 @@ void    trace(struct in_addr target_ip)
 
     printf("Source port: %d\n", source_port);
     printf("Packet TLL: %d\n", get_option(OPT_TTL)->value);
+    printf("Ports to scan: %d\n", g_opts->port_count);
+    printf("Scanning...\n");
 
     pcap = open_pcap(target_ip);
     gettimeofday(&start, NULL);
@@ -158,7 +160,7 @@ void    trace(struct in_addr target_ip)
             results[i].port = ports[i];
             results[i].states[scan] = state;
         }
-        if (g_opts->is_running) results[i].is_scanned = true; // if loop exit cause is signal, we musn't the port as scanned
+        if (g_opts->is_running) results[i].is_scanned = true; // if loop exit cause is signal, we musn't set the port as scanned
     }
     gettimeofday(&end, NULL);
     long long diff_ms = (end.tv_sec - start.tv_sec) * 1000LL + 
