@@ -5,6 +5,10 @@ unsigned short checksum(void *data, size_t len)
     unsigned int    sum;
     unsigned short  *word;
 
+# ifdef BONUS
+    if (get_option(OPT_BADSUM)->value)
+        return 0;
+# endif
     sum = 0;
     word = data;
     while (len > 1)
@@ -22,6 +26,7 @@ unsigned short checksum(void *data, size_t len)
 static struct in_addr get_source_ip(struct in_addr target_ip)
 {
     int                 sockfd;
+    int                 error;
     struct sockaddr_in  target;
     struct sockaddr_in  source;
     socklen_t           source_len;
@@ -31,10 +36,18 @@ static struct in_addr get_source_ip(struct in_addr target_ip)
         fatal_error(strerror(errno));
     target = get_sockaddr(target_ip, 53);
     if (connect(sockfd, (struct sockaddr *)&target, sizeof(target)) == -1)
-        fatal_error(strerror(errno));
+    {
+        error = errno;
+        close(sockfd);
+        fatal_error(strerror(error));
+    }
     source_len = sizeof(source);
     if (getsockname(sockfd, (struct sockaddr *)&source, &source_len) == -1)
-        fatal_error(strerror(errno));
+    {
+        error = errno;
+        close(sockfd);
+        fatal_error(strerror(error));
+    }
     close(sockfd);
     return source.sin_addr;
 }
@@ -62,13 +75,18 @@ static int open_raw_socket(void)
 {
     int sockfd;
     int one;
+    int error;
 
     sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (sockfd == -1)
         fatal_error(strerror(errno));
     one = 1;
     if (setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one)) == -1)
-        fatal_error(strerror(errno));
+    {
+        error = errno;
+        close(sockfd);
+        fatal_error(strerror(error));
+    }
     return sockfd;
 }
 
@@ -82,7 +100,7 @@ static char *get_pcap_device(struct in_addr source_ip)
     char            *name;
 
     if (pcap_findalldevs(&devices, errbuf) == -1)
-        fatal_error(errbuf);
+        return NULL;
     name = NULL;
     device = devices;
     while (device && !name)
@@ -106,8 +124,6 @@ static char *get_pcap_device(struct in_addr source_ip)
         device = device->next;
     }
     pcap_freealldevs(devices);
-    if (!name)
-        fatal_error("Failed to find capture interface");
     return name;
 }
 
@@ -419,13 +435,28 @@ void    trace(struct in_addr target_ip)
 
     source_ip = get_source_ip(target_ip);
     sockfd = open_raw_socket();
+    device = get_pcap_device(source_ip);
+    if (!device)
+    {
+        close(sockfd);
+        fatal_error("Failed to find capture interface");
+    }
     results = calloc(g_opts->port_count, sizeof(*results));
     if (!results)
     {
         close(sockfd);
         fatal_error("Failed to allocate scan results");
     }
-    hostname = get_hostname(to_str(target_ip));
+    if (get_option(OPT_NO_DNS)->value)
+        hostname = strdup(to_str(target_ip));
+    else
+        hostname = get_hostname(to_str(target_ip));
+    if (!hostname)
+    {
+        free(results);
+        close(sockfd);
+        fatal_error("Failed to allocate target hostname");
+    }
     printf("Target IP address: %s (%s)\n", hostname, to_str(target_ip));
 
     uint16_t source_port = get_option(OPT_SOURCE_PORT)->value;
@@ -436,7 +467,6 @@ void    trace(struct in_addr target_ip)
     printf("Scanning...\n");
 
     speedup = get_option(OPT_SPEEDUP)->value;
-    device = get_pcap_device(source_ip);
     pcap = NULL;
     if (speedup == 0)
         pcap = open_pcap(device, source_port, target_ip);

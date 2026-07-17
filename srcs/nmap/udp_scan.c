@@ -15,6 +15,12 @@ typedef struct s_udp_pseudo_header
     uint16_t    udp_length;
 } t_udp_pseudo_header;
 
+static bool has_bytes(const unsigned char *start, const unsigned char *end,
+    size_t size)
+{
+    return (start <= end && size <= (size_t)(end - start));
+}
+
 static void fill_udp_header(t_udp_header *udp, int port, uint16_t source_port)
 {
     memset(udp, 0, sizeof(*udp));
@@ -66,6 +72,7 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
     struct pcap_pkthdr      *header;
     const unsigned char     *packet;
     const unsigned char     *ip_packet;
+    const unsigned char     *packet_end;
     t_ip_header             *ip;
     t_udp_header            *udp;
     t_icmp_header           *icmp;
@@ -105,8 +112,13 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
         ip_packet = get_ip_packet(packet, datalink);
         if (!ip_packet)
             continue;
+        packet_end = packet + header->caplen;
+        if (!has_bytes(ip_packet, packet_end, sizeof(t_ip_header)))
+            continue;
 
         ip = (t_ip_header *)ip_packet;
+        if (ip->ihl < 5 || !has_bytes(ip_packet, packet_end, ip->ihl * 4))
+            continue;
         if (ip->saddr != target_ip.s_addr)
             continue;
 
@@ -115,6 +127,8 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
         if (ip->protocol == IPPROTO_UDP)
         {
             udp = (t_udp_header *)(ip_packet + ip->ihl * 4);
+            if (!has_bytes((unsigned char *)udp, packet_end, sizeof(*udp)))
+                continue;
 
             if (ntohs(udp->source) == port &&
                 ntohs(udp->dest) == source_port)
@@ -129,17 +143,24 @@ static const char *read_udp_response(pcap_t *pcap, int port, uint16_t source_por
             continue;
 
         icmp = (t_icmp_header *)(ip_packet + ip->ihl * 4);
+        if (!has_bytes((unsigned char *)icmp, packet_end, sizeof(*icmp)))
+            continue;
 
         if (icmp->type != ICMP_DEST_UNREACH)
             continue;
 
         inner_ip = (t_ip_header *)(icmp + 1);
-
-        if (inner_ip->protocol != IPPROTO_UDP)
+        if (!has_bytes((unsigned char *)inner_ip, packet_end,
+                sizeof(*inner_ip)) || inner_ip->ihl < 5 ||
+            !has_bytes((unsigned char *)inner_ip, packet_end,
+                inner_ip->ihl * 4) || inner_ip->protocol != IPPROTO_UDP)
             continue;
 
         inner_udp = (t_udp_header *)((unsigned char *)inner_ip +
             inner_ip->ihl * 4);
+        if (!has_bytes((unsigned char *)inner_udp, packet_end,
+                sizeof(*inner_udp)))
+            continue;
 
         if (ntohs(inner_udp->source) != source_port ||
             ntohs(inner_udp->dest) != port)

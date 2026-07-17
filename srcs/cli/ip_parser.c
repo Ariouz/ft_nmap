@@ -25,7 +25,7 @@ void parse_file(const char *filename) {
         sprintf(s, "Could not open file: %s", filename);
         fatal_error(s);
     }
-    char line[INET6_ADDRSTRLEN];
+    char line[1024];
     while (fgets(line, sizeof(line), fp)) {
         line[strcspn(line, "\r\n")] = 0;
         if (strlen(line) > 0)

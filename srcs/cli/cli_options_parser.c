@@ -12,12 +12,19 @@ struct option long_options[] = {
     {"ttl",    required_argument, 0, 't'},
     {"open",    no_argument, 0, 'o'},
     {"reason",    no_argument, 0, 'r'},
+    {"badsum",  no_argument, 0, OPT_BADSUM},
+    {"no-dns",  no_argument, 0, OPT_NO_DNS},
     #endif
     {0, 0, 0, 0}
 };
 
 bool    process_option(t_option *option, char *value)
 {
+    if (!option->requires_value)
+    {
+        option->value = true;
+        return true;
+    }
     #ifdef BONUS
     if (option->code == OPT_SOURCE_PORT)
         option->value = parse_opt_int(value, 1, 65535);
@@ -35,11 +42,12 @@ bool    process_option(t_option *option, char *value)
 void parse_cli_options(int argc, char **argv) {
     int opt, option_index = 0;
     #ifndef BONUS
-    char *options = "hp:i:f:s:c:";
+    char *options = ":hp:i:f:s:c:";
     #else
-    char *options = "hp:i:f:s:c:g:t:or";
+    char *options = ":hp:i:f:s:c:g:t:orbn";
     #endif
 
+    opterr = 0;
     while ((opt = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p': parse_port_option(optarg); break;
@@ -52,7 +60,15 @@ void parse_cli_options(int argc, char **argv) {
             case 'g': set_option(opt, optarg); break;
             case 't': set_option(opt, optarg); break;
             case 'o': set_option(opt, optarg); break;
+            case 'b': set_option(opt, optarg); break;
+            case 'n': set_option(opt, optarg); break;
             #endif
+            case ':':
+                fatal_error("Option requires a value");
+                break;
+            case '?':
+                fatal_error("Invalid option, use --help for options list");
+                break;
         }
     }
 }
@@ -111,6 +127,8 @@ void print_help() {
     printf("  -t, --ttl <ttl>\t\tSet time-to-live\n");
     printf("  -o, --open\t\t\tOnly show open ports\n");
     printf("  -r, --reason\t\t\tDisplay the reason a port is in a particular state\n");
+    printf("  --badsum\t\t\tSend packets with a zero checksum\n");
+    printf("  -n, --no-dns\t\tNever perform DNS resolution\n");
     #endif
 
     printf("\n");

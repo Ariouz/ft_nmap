@@ -22,7 +22,7 @@ void    init_opts()
 }
 
 void init_default_options() {
-    g_opts->def_size = 4;
+    g_opts->def_size = 6;
     g_opts->def_options = calloc(g_opts->def_size, sizeof(*g_opts->def_options));
     if (!g_opts->def_options)
         fatal_error("Fatal: Failed to initialize default options");
@@ -31,6 +31,8 @@ void init_default_options() {
     g_opts->def_options[1] = get_default_if_not_opt(OPT_TTL);
     g_opts->def_options[2] = get_default_if_not_opt(OPT_OPEN);
     g_opts->def_options[3] = get_default_if_not_opt(OPT_REASON);
+    g_opts->def_options[4] = get_default_if_not_opt(OPT_BADSUM);
+    g_opts->def_options[5] = get_default_if_not_opt(OPT_NO_DNS);
 }
 
 void    init_cli_options()
@@ -45,6 +47,8 @@ void    init_cli_options()
     add_option(OPT_TTL, "Packet TTL", DEFAULT_TTL, true);
     add_option(OPT_OPEN, "Display only open ports", false, false);
     add_option(OPT_REASON, "Display the reason a port is in state", false, false);
+    add_option(OPT_BADSUM, "Send packets with a zero checksum", false, false);
+    add_option(OPT_NO_DNS, "Never perform DNS resolution", false, false);
     #endif
     add_option(OPT_SPEEDUP, "Number of parallel threads (default 0, max 250)", 0, true);
 

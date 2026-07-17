@@ -71,7 +71,7 @@ const char *get_reason(t_port_result res) {
 static void print_table_header(void) {
     printf("%-8s %-20s %-30s %-15s", "Port", "Service", "Results", "Conclusion");
     #ifdef BONUS
-    if (get_option(OPT_REASON)) printf(" %-10s", "Reason");
+    if (get_option(OPT_REASON)->value) printf(" %-10s", "Reason");
     #endif
     printf("\n------------------------------------------------------------------------------------------\n");
 }
@@ -95,7 +95,7 @@ static void print_port_row(t_port_result res)
     }
     printf("%-15s ", get_conclusion(res));
     #ifdef BONUS
-        if (get_option(OPT_REASON)) printf("%-10s", get_reason(res));
+        if (get_option(OPT_REASON)->value) printf("%-10s", get_reason(res));
     #endif
     printf("\n");
 }
@@ -114,7 +114,7 @@ void print_final_results(t_port_result *results, size_t port_count, struct in_ad
             print_port_row(results[i]);
     }
 
-    if (get_option(OPT_OPEN)) return ;
+    if (get_option(OPT_OPEN)->value) return ;
     printf("\nClosed/Filtered/Unfiltered ports:\n");
     print_table_header();
     for (size_t i = 0; i < port_count; i++) {
@@ -123,4 +123,3 @@ void print_final_results(t_port_result *results, size_t port_count, struct in_ad
             print_port_row(results[i]);
     }
 }
-

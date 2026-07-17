@@ -45,6 +45,8 @@
 # define OPT_OPEN 'o'
 # define OPT_REASON 'r'
 # define OPT_SPEEDUP 's'
+# define OPT_BADSUM 'b'
+# define OPT_NO_DNS 'n'
 
 # define SCAN_OPEN            "open"
 # define SCAN_CLOSED          "closed"

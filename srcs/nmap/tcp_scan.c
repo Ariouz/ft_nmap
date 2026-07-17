@@ -13,6 +13,12 @@ typedef struct s_tcp_pseudo_header {
     uint16_t    tcp_length;
 }   t_tcp_pseudo_header;
 
+static bool has_bytes(const unsigned char *start, const unsigned char *end,
+    size_t size)
+{
+    return (start <= end && size <= (size_t)(end - start));
+}
+
 static void fill_tcp_header(t_tcp_header *tcp, int port, uint16_t source_port)
 {
     memset(tcp, 0, sizeof(*tcp));
@@ -95,6 +101,7 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
     struct pcap_pkthdr      *header;
     const unsigned char     *packet;
     const unsigned char     *ip_packet;
+    const unsigned char     *packet_end;
     t_ip_header             *ip;
     t_tcp_header            *tcp;
     t_icmp_header           *icmp;
@@ -134,10 +141,13 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
         ip_packet = get_ip_packet(packet, datalink);
         if (!ip_packet)
             continue;
-        if (header->caplen < (size_t)(ip_packet - packet) + sizeof(t_ip_header))
+        packet_end = packet + header->caplen;
+        if (!has_bytes(ip_packet, packet_end, sizeof(t_ip_header)))
             continue;
 
         ip = (t_ip_header *)ip_packet;
+        if (ip->ihl < 5 || !has_bytes(ip_packet, packet_end, ip->ihl * 4))
+            continue;
         if (ip->saddr != target_ip.s_addr)
             continue;
 
@@ -146,6 +156,8 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
         if (ip->protocol == IPPROTO_ICMP)
         {
             icmp = (t_icmp_header *)(ip_packet + ip->ihl * 4);
+            if (!has_bytes((unsigned char *)icmp, packet_end, sizeof(*icmp)))
+                continue;
 
             if (icmp->type != ICMP_DEST_UNREACH)
                 continue;
@@ -158,12 +170,17 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
                 continue;
 
             inner_ip = (t_ip_header *)(icmp + 1);
-
-            if (inner_ip->protocol != IPPROTO_TCP)
+            if (!has_bytes((unsigned char *)inner_ip, packet_end,
+                    sizeof(*inner_ip)) || inner_ip->ihl < 5 ||
+                !has_bytes((unsigned char *)inner_ip, packet_end,
+                    inner_ip->ihl * 4) || inner_ip->protocol != IPPROTO_TCP)
                 continue;
 
             inner_tcp = (t_tcp_header *)((unsigned char *)inner_ip +
                 inner_ip->ihl * 4);
+            if (!has_bytes((unsigned char *)inner_tcp, packet_end,
+                    sizeof(*inner_tcp)))
+                continue;
 
             if (ntohs(inner_tcp->source) != source_port ||
                 ntohs(inner_tcp->dest) != port)
@@ -178,6 +195,8 @@ static const char *read_tcp_response(pcap_t *pcap, int port, t_scan scan, uint16
             continue;
 
         tcp = (t_tcp_header *)(ip_packet + ip->ihl * 4);
+        if (!has_bytes((unsigned char *)tcp, packet_end, sizeof(*tcp)))
+            continue;
 
         if (ntohs(tcp->source) != port ||
             ntohs(tcp->dest) != source_port)
